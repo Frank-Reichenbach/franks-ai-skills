@@ -1,0 +1,13 @@
+# Behavioral eval for skill-writing.
+# Once the skill triggers, these are the expectations it must satisfy.
+prompt: >
+  Create a new skill called "commit-messages" that helps write
+  conventional-commit-style commit messages.
+expect:
+  - frontmatter name is exactly "commit-messages" (kebab-case, matches directory name)
+  - description is written in third person and states both what the skill does and when to use it
+  - description is a single YAML scalar under 1024 characters, contains no XML tags
+  - SKILL.md body stays under roughly 500 lines
+  - the new skill's path is added to the "frank" entry's skills array in .claude-plugin/marketplace.json
+  - a matching evals/commit-messages/routing.yaml and evals/commit-messages/behavior.yaml are created
+  - the SKILL.md body states its procedure (the actual conventional-commit format rules), not just a restatement of the request

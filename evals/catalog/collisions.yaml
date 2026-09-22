@@ -1,0 +1,12 @@
+# Catalog collision eval.
+# Once two or more skills exist, add cases here whose prompts sit near a
+# description boundary between two skills, to catch routing ambiguity
+# before it ships. Format:
+#
+# cases:
+#   - prompt: "Review this REST API design for scalability"
+#     expected: architecture-review
+#     not_expected: [code-review]
+#
+# Empty until skill #2 exists.
+cases: []

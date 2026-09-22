@@ -1,0 +1,8 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "frank",
+  "version": "0.1.0",
+  "description": "Frank's personal AI skill collection",
+  "license": "GPL-3.0-or-later",
+  "repository": "https://github.com/Frank-Reichenbach/franks-ai-skills"
+}
