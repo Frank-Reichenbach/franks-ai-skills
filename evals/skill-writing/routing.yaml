@@ -1,0 +1,14 @@
+# Routing eval for skill-writing.
+# Each case has a prompt and the skill name that should be selected
+# (or `null` if no skill should trigger).
+cases:
+  - prompt: "Create a new skill for this repo"
+    expect_skill: skill-writing
+  - prompt: "Write a SKILL.md for reviewing pull requests"
+    expect_skill: skill-writing
+  - prompt: "How do I add a new plugin entry to this repo's marketplace?"
+    expect_skill: skill-writing
+  - prompt: "Fix the typo in README.md"
+    expect_skill: null
+  - prompt: "What's the weather like today?"
+    expect_skill: null

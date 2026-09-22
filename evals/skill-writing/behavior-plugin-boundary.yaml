@@ -1,0 +1,18 @@
+# Supplementary behavioral scenario for skill-writing: the "new skill vs.
+# new plugin" decision point. Not yet checked by tools/checks.py — read
+# directly when refining this skill. Same shape as behavior.yaml.
+prompt: >
+  I want to add a skill that runs a script requiring network access to
+  fetch data from an internal API. Should this go in the existing "frank"
+  plugin or a new one?
+expect:
+  - identifies that a new trust/dependency boundary (network access to an
+    internal API, likely requiring credentials) is a legitimate reason for
+    a new plugin, per "When to add a new plugin instead of adding to
+    frank" in this skill
+  - does not default to adding it to "frank" just because that's the only
+    existing plugin
+  - explains the boundary reasoning (trust/dependency/audience/release
+    cadence) rather than just asserting an answer with no justification
+  - does not treat this as a topic/taxonomy question (e.g. "this is an
+    engineering skill so it goes in an engineering plugin")

@@ -1,0 +1,16 @@
+# Supplementary behavioral scenario for skill-writing: an underspecified
+# request. Not yet checked by tools/checks.py — read directly when
+# refining this skill. Same shape as behavior.yaml.
+prompt: >
+  Make me a skill for "being helpful with documentation."
+expect:
+  - recognizes the request is too vague to produce a usable description
+    (fails "include concrete trigger terms a user would actually type")
+  - asks a clarifying question about the actual documentation task (e.g.
+    generating docs from code, reviewing doc PRs, writing a specific kind
+    of doc) rather than inventing scope to fill the gap
+  - does not produce a SKILL.md with a vague description like "Helps with
+    documentation" just to have something to show
+  - if the user's answer to the clarifying question is itself still broad,
+    proposes narrowing to one concrete capability rather than one skill
+    that tries to cover everything "documentation"-related
