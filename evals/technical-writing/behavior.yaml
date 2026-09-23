@@ -1,0 +1,10 @@
+# Behavioral eval for technical-writing.
+prompt: >
+  Write a short paragraph explaining what the r00t skill does, for
+  someone new to this repo.
+expect:
+  - uses short, unambiguous sentences rather than long compound ones
+  - leads with what the skill does before secondary detail
+  - avoids unexplained jargon or defines it on first use
+  - matches the language of the request (English, since the prompt is English)
+  - applies the default voice guidelines (third person, direct, no inflated claims) unless the project or request says otherwise

@@ -1,0 +1,12 @@
+# Routing eval for technical-writing.
+cases:
+  - prompt: "Write a README section explaining how to install this plugin"
+    expect_skill: technical-writing
+  - prompt: "Clean up the wording in this PR description"
+    expect_skill: technical-writing
+  - prompt: "Draft a client-facing summary of this architecture proposal"
+    expect_skill: technical-writing
+  - prompt: "Fix the failing test in tools/checks.py"
+    expect_skill: null
+  - prompt: "Create a new skill for reviewing pull requests"
+    expect_skill: skill-writing

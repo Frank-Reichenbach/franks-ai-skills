@@ -16,3 +16,7 @@ cases:
     expected: [r00t]
     also_expected: [using-superpowers]
     note: "Both may fire together when manually invoked in the same session; this is expected cooperation, not a routing collision."
+  - prompt: "Write documentation for this new skill, including its SKILL.md description"
+    expected: skill-writing
+    not_expected: [technical-writing]
+    note: "Authoring a SKILL.md's own content is skill-writing's job (naming/description/structure rules); technical-writing governs general prose clarity and voice, not skill-authoring mechanics."
