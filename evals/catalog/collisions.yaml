@@ -1,12 +1,18 @@
 # Catalog collision eval.
-# Once two or more skills exist, add cases here whose prompts sit near a
-# description boundary between two skills, to catch routing ambiguity
-# before it ships. Format:
+# Add cases here whose prompts sit near a description boundary between two
+# skills, to catch routing ambiguity before it ships. Format:
 #
 # cases:
 #   - prompt: "Review this REST API design for scalability"
 #     expected: architecture-review
 #     not_expected: [code-review]
 #
-# Empty until skill #2 exists.
-cases: []
+# A case can also document an *intentional* overlap that is not a
+# collision — r00t is manually invoked alongside using-superpowers
+# (from the superpowers plugin) in the same session; both are expected to
+# fire together, and this is cooperation, not a routing bug.
+cases:
+  - prompt: "starting a session in a project with both this plugin and superpowers installed"
+    expected: [r00t]
+    also_expected: [using-superpowers]
+    note: "Both may fire together when manually invoked in the same session; this is expected cooperation, not a routing collision."
