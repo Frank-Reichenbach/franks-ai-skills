@@ -12,7 +12,7 @@
       "strict": false,
       "description": "Frank's personal AI skill collection",
       "version": "0.1.0",
-      "skills": ["./skills/skill-writing", "./skills/r00t", "./skills/technical-writing"]
+      "skills": ["./skills/skill-writing", "./skills/r00t", "./skills/technical-writing", "./skills/git-flow"]
     }
   ]
 }

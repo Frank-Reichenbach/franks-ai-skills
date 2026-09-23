@@ -20,6 +20,9 @@ rest of the session — not only the one `r00t` was invoked alongside.
   repo's marketplace/plugin/eval conventions.
 - `technical-writing` — clarity, structure, and tone for technical prose,
   with a default voice guideline projects can override.
+- `git-flow` — branching, commit, and pull-request conventions, including
+  the rule that merging always needs an explicit request or human
+  approval.
 
 Update this list whenever a new skill is added to this plugin (see
 `skills/skill-writing/SKILL.md` for how skills get added).
