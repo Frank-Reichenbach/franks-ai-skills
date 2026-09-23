@@ -26,6 +26,11 @@ rest of the session — not only the one `r00t` was invoked alongside.
 - `shell` — runs shell commands through a wrapper with best-effort secret
   redaction and a user-authorized-only override for known secret
   locations.
+- `retro` — reviews a session and proposes skill updates, new skills, or
+  bug reports, targeting each proposal's actual source repository.
+  **Manual-only** (`disable-model-invocation: true`) — `r00t` cannot
+  invoke it directly, even when it clearly applies; when it seems
+  relevant, suggest the user run `/frank:retro` themselves instead.
 
 Update this list whenever a new skill is added to this plugin (see
 `skills/skill-writing/SKILL.md` for how skills get added).
@@ -49,6 +54,12 @@ Update this list whenever a new skill is added to this plugin (see
   the `franks-ai-skills` repository itself. Explicit project instructions
   and explicit user preferences always take precedence over any skill this
   plugin routes to.
+- A skill marked manual-only (`disable-model-invocation: true` in its own
+  frontmatter, like `retro`) can never be invoked by `r00t` or any other
+  skill, even when it clearly applies — that flag blocks any
+  model-initiated invocation, not just an unprompted one, and there is no
+  workaround for `r00t` specifically. When one seems relevant, suggest
+  the explicit command instead of attempting to invoke it.
 
 ## Host invocation
 

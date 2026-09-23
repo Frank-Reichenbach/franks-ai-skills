@@ -1,0 +1,22 @@
+# Behavioral eval for retro — known source repository.
+# Fixture: a synthetic scenario with concrete, fully-specified facts, so
+# a standalone evaluator can check retro's output against them directly
+# rather than inventing content or locations of its own. "write-ticket"
+# is a fictional skill name for this fixture, not a real one.
+prompt: >
+  Fixture: during this session we used a skill called "write-ticket"
+  from the "frank" plugin. Its description says "Use whenever drafting
+  a ticket," but its SKILL.md body never says what fields a ticket
+  needs, so every use has to guess. This is the session's only finding.
+
+  Fixture facts:
+  - Installed (cache) copy:
+    ~/.claude/plugins/cache/franks-ai-skills-marketplace/frank/skills/write-ticket/SKILL.md
+  - Actual source repository: github.com/Frank-Reichenbach/franks-ai-skills,
+    at skills/write-ticket/SKILL.md
+expect:
+  - classifies the finding as a skill-update
+  - names the source repository (github.com/Frank-Reichenbach/franks-ai-skills, skills/write-ticket/SKILL.md) as the edit target, not the cache path from the fixture
+  - explicitly states it will not write to the cache path given in the fixture
+  - shows a concrete proposed SKILL.md addition (e.g. a "Required ticket fields" section) before asking whether to implement it now
+  - does not implement anything without an explicit "implement now" choice for that specific item
