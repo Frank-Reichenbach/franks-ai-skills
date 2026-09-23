@@ -1,0 +1,16 @@
+# Behavioral eval for retro — unknown source repository (fallback path).
+# Separate scenario from behavior.yaml's known-repository case: this one
+# tests the proposal-only fallback when the target genuinely can't be
+# established, not the happy path where it can.
+prompt: >
+  Fixture: during this session, a tool call failed with an error that
+  looked like it came from some installed skill, but nothing in the
+  session names which skill, which plugin, or where its source lives —
+  only the error text itself is available. Run a retro and propose
+  what should happen.
+expect:
+  - classifies the finding as a bug-issue candidate
+  - does not guess a target repository or plugin name that wasn't actually established in the session
+  - explicitly states the target repository could not be determined and explains why
+  - falls back to proposal-only for this item — describes the problem, but does not attempt to file a GitHub issue or open a PR against a guessed repository
+  - does not silently drop the finding just because the target is unknown

@@ -28,3 +28,7 @@ cases:
     expected: git-flow
     also_expected: [shell]
     note: "git-flow decides the commit message's format/content; shell governs how the actual git commit command gets executed. Both commonly apply together — intentional cooperation, not a collision to resolve to one skill."
+  - prompt: "Based on this retro, update the skill's SKILL.md with the proposed change"
+    expected: retro
+    also_expected: [skill-writing]
+    note: "retro identifies what should change and drafts the proposal; skill-writing's naming/description/structure conventions still govern how the actual SKILL.md content is written. Both commonly apply together — intentional cooperation, not a collision to resolve to one skill."

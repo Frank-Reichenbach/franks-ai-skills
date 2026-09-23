@@ -11,3 +11,6 @@ cases:
     expect_skill: null
   - prompt: "Fix the typo in README.md"
     expect_skill: null
+  - prompt: "It's been a long session, let's capture what we learned"
+    expect_skill: null
+    note: "retro would fit the intent, but disable-model-invocation: true makes it architecturally unreachable via the Skill tool, including by r00t itself. Correct behavior is to suggest running /frank:retro, not to attempt invoking it."
