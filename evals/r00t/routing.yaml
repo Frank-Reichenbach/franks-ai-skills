@@ -1,0 +1,13 @@
+# Routing eval for r00t.
+# r00t is invoked manually, not auto-triggered. These cases describe what
+# it should route to, among this plugin's currently-installed skills, once
+# it's active in a session.
+cases:
+  - prompt: "Create a new skill for this repo"
+    expect_skill: skill-writing
+  - prompt: "Write a SKILL.md for reviewing pull requests"
+    expect_skill: skill-writing
+  - prompt: "What's the weather like today?"
+    expect_skill: null
+  - prompt: "Fix the typo in README.md"
+    expect_skill: null

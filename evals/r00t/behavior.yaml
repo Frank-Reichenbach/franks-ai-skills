@@ -1,0 +1,8 @@
+# Behavioral eval for r00t.
+prompt: >
+  /r00t
+expect:
+  - acknowledges the session-wide routing convention rather than staying silent or asking for a task
+  - does not perform any startup context-gathering (no git status, no file reads) on its own
+  - a later request in the same session that matches an installed skill (e.g. "create a new skill for this repo") gets routed to that skill without r00t needing to be re-invoked
+  - repeat invocation of r00t later in the same session causes no duplicated or corrupted state
