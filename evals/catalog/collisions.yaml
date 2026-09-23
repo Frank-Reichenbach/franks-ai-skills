@@ -24,3 +24,7 @@ cases:
     expected: git-flow
     also_expected: [technical-writing]
     note: "git-flow governs the commit's format/structure (type prefix, atomic scope); technical-writing governs the prose quality of its body. Both commonly apply together — intentional cooperation, not a collision to resolve to one skill."
+  - prompt: "Commit this change with a proper conventional commit message"
+    expected: git-flow
+    also_expected: [shell]
+    note: "git-flow decides the commit message's format/content; shell governs how the actual git commit command gets executed. Both commonly apply together — intentional cooperation, not a collision to resolve to one skill."

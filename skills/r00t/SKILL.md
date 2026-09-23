@@ -23,6 +23,9 @@ rest of the session — not only the one `r00t` was invoked alongside.
 - `git-flow` — branching, commit, and pull-request conventions, including
   the rule that merging always needs an explicit request or human
   approval.
+- `shell` — runs shell commands through a wrapper with best-effort secret
+  redaction and a user-authorized-only override for known secret
+  locations.
 
 Update this list whenever a new skill is added to this plugin (see
 `skills/skill-writing/SKILL.md` for how skills get added).
