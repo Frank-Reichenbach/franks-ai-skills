@@ -20,3 +20,7 @@ cases:
     expected: skill-writing
     not_expected: [technical-writing]
     note: "Authoring a SKILL.md's own content is skill-writing's job (naming/description/structure rules); technical-writing governs general prose clarity and voice, not skill-authoring mechanics."
+  - prompt: "Write a commit message for this change following our conventions"
+    expected: git-flow
+    also_expected: [technical-writing]
+    note: "git-flow governs the commit's format/structure (type prefix, atomic scope); technical-writing governs the prose quality of its body. Both commonly apply together — intentional cooperation, not a collision to resolve to one skill."

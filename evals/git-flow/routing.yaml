@@ -1,0 +1,12 @@
+# Routing eval for git-flow.
+cases:
+  - prompt: "What branch name should I use for adding a new skill?"
+    expect_skill: git-flow
+  - prompt: "Is it okay to merge this PR now that CI is green?"
+    expect_skill: git-flow
+  - prompt: "Write a commit message for this change"
+    expect_skill: git-flow
+  - prompt: "Convert 100 Fahrenheit to Celsius"
+    expect_skill: null
+  - prompt: "Create a new skill for reviewing pull requests"
+    expect_skill: skill-writing
