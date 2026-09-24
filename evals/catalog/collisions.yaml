@@ -8,14 +8,14 @@
 #     not_expected: [code-review]
 #
 # A case can also document an *intentional* overlap that is not a
-# collision — r00t is manually invoked alongside using-superpowers
+# collision — r00t is invoked alongside using-superpowers
 # (from the superpowers plugin) in the same session; both are expected to
 # fire together, and this is cooperation, not a routing bug.
 cases:
   - prompt: "starting a session in a project with both this plugin and superpowers installed"
-    expected: [r00t]
+    expected: r00t
     also_expected: [using-superpowers]
-    note: "Both may fire together when manually invoked in the same session; this is expected cooperation, not a routing collision."
+    note: "Both may fire together at the start of a session; this is expected cooperation, not a routing collision."
   - prompt: "Write documentation for this new skill, including its SKILL.md description"
     expected: skill-writing
     not_expected: [technical-writing]
@@ -32,3 +32,11 @@ cases:
     expected: retro
     also_expected: [skill-writing]
     note: "retro identifies what should change and drafts the proposal; skill-writing's naming/description/structure conventions still govern how the actual SKILL.md content is written. Both commonly apply together — intentional cooperation, not a collision to resolve to one skill."
+  - prompt: "Write the title and body for the bug issue this retro proposes"
+    expected: retro
+    also_expected: [technical-writing]
+    note: "retro decides what the issue is about and drafts it; technical-writing governs the prose quality of that title/body, the same as any other technical writing. Both commonly apply together — intentional cooperation, not a collision to resolve to one skill."
+  - prompt: "Add this new skill and commit it"
+    expected: skill-writing
+    also_expected: [git-flow]
+    note: "skill-writing decides the skill's own content and structure; git-flow governs the commit/PR that lands it, the same as any other change. Both commonly apply together — intentional cooperation, not a collision to resolve to one skill."

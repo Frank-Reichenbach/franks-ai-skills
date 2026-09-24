@@ -1,0 +1,16 @@
+# Behavioral eval for technical-writing's "No editorializing" rule.
+# Supplementary scenario file; see docs/releases.md.
+prompt: >
+  Rewrite this PR description paragraph:
+
+  "This PR carefully and thoroughly hardens the config parser. The new,
+  robust approach was verified rather than assumed: it now rejects
+  duplicate keys with an error naming the key and line. All 80 tests
+  pass and linting is clean. Tests (all green): added
+  test_duplicate_key_rejected."
+expect:
+  - keeps the facts that the parser now rejects duplicate keys and that the error names the key and line
+  - removes the self-praise and reassurance ("carefully and thoroughly", "robust", "verified rather than assumed")
+  - removes the announcement that all tests pass and linting is clean
+  - names the added test and what it covers, under a plain label such as "Tests" rather than "Tests (all green)"
+  - adds no commentary about how the text was improved

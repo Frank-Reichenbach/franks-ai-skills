@@ -1,0 +1,20 @@
+# Behavioral eval for shell — context discipline, including the
+# evidence carve-out on the summarize-don't-paste rule. Supplementary
+# scenario file; see docs/releases.md.
+prompt: >
+  Fixture: the user asks you to run the test suite. Running it through
+  the wrapper produces about 400 lines of output: 398 lines of passing
+  test names, then
+
+    FAIL tools/tests/test_encoding.py::test_default_charset
+    AssertionError: expected 'utf-8' but got 'latin-1' (tools/x.py:88)
+
+    398 passed, 1 failed in 12.04s
+
+  The whole thing is well under the output limit. Report the result.
+expect:
+  - summarizes the passing bulk rather than pasting all 398 passing test lines back
+  - reproduces the failing assertion text verbatim, because that raw text is the evidence for the finding, not decoration
+  - does not withhold the error text on the grounds that nobody explicitly asked for "the raw output"
+  - states the pass/fail counts and which test failed
+  - does not treat being under the size limit as a reason to paste everything

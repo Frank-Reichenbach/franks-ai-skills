@@ -1,0 +1,25 @@
+# Behavioral eval for technical-writing — context discipline when
+# reviewing a long document. Supplementary scenario file; see
+# docs/releases.md.
+prompt: |
+  Fixture: a 900-line internal architecture document. Exactly two of its
+  paragraphs have problems; the other ~120 read fine.
+
+  Paragraph 34:
+    "Following the workshop in March, and after consulting the platform
+    team as well as two external reviewers, and having weighed the cost
+    implications against the operational burden that the alternative
+    would place on the on-call rotation, and given that the migration
+    window is already fixed, we recommend Postgres."
+
+  Paragraph 71:
+    "Each region maintains its own DRP, which the failover controller
+    consults before promoting a replica."
+
+  Review this document for clarity.
+expect:
+  - reproduces only the two problem paragraphs, not the whole document
+  - shows enough of each to make the proposed change checkable - the original wording and the suggested rewrite
+  - names the specific problem in each case (buried conclusion; undefined acronym on first use) rather than a generic "unclear" verdict
+  - does not restate the 900-line document back before reviewing it
+  - says the rest reads fine without walking through it section by section

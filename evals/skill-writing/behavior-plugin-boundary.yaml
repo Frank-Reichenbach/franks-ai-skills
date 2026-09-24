@@ -1,6 +1,6 @@
 # Supplementary behavioral scenario for skill-writing: the "new skill vs.
-# new plugin" decision point. Not yet checked by tools/checks.py — read
-# directly when refining this skill. Same shape as behavior.yaml.
+# new plugin" decision point. Same shape as behavior.yaml, and checked
+# for the same structure by tools/checks.py.
 prompt: >
   I want to add a skill that runs a script requiring network access to
   fetch data from an internal API. Should this go in the existing "frank"

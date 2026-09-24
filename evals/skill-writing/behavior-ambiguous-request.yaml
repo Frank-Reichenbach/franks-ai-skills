@@ -1,6 +1,6 @@
 # Supplementary behavioral scenario for skill-writing: an underspecified
-# request. Not yet checked by tools/checks.py — read directly when
-# refining this skill. Same shape as behavior.yaml.
+# request. Same shape as behavior.yaml, and checked for the same
+# structure by tools/checks.py.
 prompt: >
   Make me a skill for "being helpful with documentation."
 expect:

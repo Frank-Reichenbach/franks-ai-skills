@@ -34,6 +34,26 @@ Directory, not via a documented single-plugin CLI command; see
 [Codex's plugin docs](https://developers.openai.com/codex/plugins/build)
 for anything that's changed since.
 
+## Skills
+
+- `skill-writing` — authoring and reviewing `SKILL.md` files, and this
+  repo's marketplace/plugin/eval conventions.
+- `r00t` — this plugin's entry point; establishes a session-wide
+  routing convention to the rest of the skills below.
+- `technical-writing` — clarity, structure, and tone for technical prose,
+  without editorializing, with a default client-facing voice projects can
+  override.
+- `git-flow` — branching, commit, and pull-request conventions, including
+  the rule that merging always needs an explicit request or human
+  approval.
+- `shell` — runs shell commands through a wrapper with best-effort secret
+  redaction and a user-authorized-only override for known secret
+  locations.
+- `retro` — reviews a session and proposes skill updates, new skills, or
+  bug reports, targeting each proposal's actual source repository.
+
+See `skills/skill-writing/SKILL.md` for how to add another.
+
 ## Structure
 
 - `skills/<name>/SKILL.md` — canonical source for every skill.
@@ -42,9 +62,7 @@ for anything that's changed since.
 - `evals/<name>/` — routing and behavioral test cases per skill.
 - `docs/` — repo-wide policy (security, releases, portability).
 - `tools/` — `checks.py`, the structural validator, plus `validate.sh` and `requirements.txt`.
-- `tools/tests/` — the validator's own unit test suite.
-
-See `skills/skill-writing/SKILL.md` for how to add a new skill.
+- `tools/tests/` — `checks.py`'s own unit test suite, plus the separate executable tests for `shell`'s `scripts/run.sh`.
 
 ## Validate
 
@@ -55,6 +73,7 @@ Prerequisites: `python3`, the packages in `tools/requirements.txt`
 ./tools/validate.sh
 ```
 
-Runs on every pull request via `.github/workflows/validate.yml`. It runs the
-validator's own unit test suite (`python3 -m unittest discover -s tools/tests`)
-before the structural checks.
+Runs on every pull request via `.github/workflows/validate.yml`, in three
+steps: the unit test suite (`python3 -m unittest discover -s tools/tests`),
+then `claude plugin validate . --strict` (hence the `claude` CLI
+prerequisite), then the structural checks (`python3 tools/checks.py`).

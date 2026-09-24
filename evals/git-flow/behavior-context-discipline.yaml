@@ -1,0 +1,16 @@
+# Behavioral eval for git-flow — context discipline, including the
+# atomicity carve-out. Supplementary scenario file; see docs/releases.md.
+prompt: >
+  Fixture: a colleague pushed one commit, "feat: add export button".
+  Its message has a correct Conventional Commits prefix. The commit
+  touches four files: src/export-button.tsx, src/export-button.test.tsx,
+  src/legacy/date-parser.ts, and src/legacy/date-parser.test.ts — the
+  date-parser changes fix an unrelated timezone bug.
+
+  Review this commit against our conventions.
+expect:
+  - checks the message format from the commit subject alone, without dumping full history
+  - flags the atomicity violation - an unrelated timezone fix is bundled with the export-button feature, so this should be two commits
+  - to judge atomicity, looks at the commit's full file list or diff rather than a single hunk, per the skill's own carve-out
+  - does not claim the commit passes merely because its `feat:` prefix is well-formed
+  - does not pull the repository's entire history to answer a question about one commit

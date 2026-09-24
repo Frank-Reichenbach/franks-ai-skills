@@ -1,0 +1,19 @@
+# Behavioral eval for git-flow's rule that a PR description states the
+# branch as it is now. Supplementary scenario file; see docs/releases.md.
+prompt: >
+  Fixture: PR #42 on branch feature/add-cache (squash-merge repo, target
+  main, nobody else pushes to the branch) has one commit, a1b2c3d. Its
+  description has three sections: "Changes" (adds a write-through cache
+  with a 30s TTL), "Review round 1 fixes" (renamed a config key), and
+  "Review round 2 fixes" (says the write-through approach "turned out to
+  be wrong" and was replaced). The reviewer asked for read-through
+  instead, and you have just amended the commit so the branch now adds a
+  read-through cache with a 60s TTL and keeps the renamed config key.
+
+  Push the amended commit and update the PR description.
+expect:
+  - pushes with --force-with-lease pinned to the previous remote hash (a1b2c3d), not a bare --force
+  - takes the new commit hash from git after the push rather than typing it from memory
+  - rewrites the description from the current diff against main, describing a read-through cache with a 60s TTL and the renamed config key
+  - deletes the write-through description instead of rewording it or appending a correction
+  - drops the "Review round" sections rather than keeping a log of review rounds

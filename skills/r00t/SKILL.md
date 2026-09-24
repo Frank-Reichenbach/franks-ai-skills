@@ -1,7 +1,6 @@
 ---
 name: r00t
-description: Establishes, for the rest of the session, that this plugin's own installed skills should be considered against every request and invoked when they apply. Invoked manually, not automatically — typically once, at the start of a session in a project that has this plugin installed.
-disable-model-invocation: true
+description: Establishes, for the rest of the session, that this plugin's own installed skills should be considered against every request and invoked when they apply. Use at the start of every session in a project that has this plugin installed, before the first task, so later requests get routed to this plugin's skills.
 ---
 
 # r00t
@@ -19,7 +18,8 @@ rest of the session — not only the one `r00t` was invoked alongside.
 - `skill-writing` — authoring and reviewing `SKILL.md` files, and this
   repo's marketplace/plugin/eval conventions.
 - `technical-writing` — clarity, structure, and tone for technical prose,
-  with a default voice guideline projects can override.
+  without editorializing, with a default client-facing voice projects can
+  override.
 - `git-flow` — branching, commit, and pull-request conventions, including
   the rule that merging always needs an explicit request or human
   approval.
@@ -28,9 +28,6 @@ rest of the session — not only the one `r00t` was invoked alongside.
   locations.
 - `retro` — reviews a session and proposes skill updates, new skills, or
   bug reports, targeting each proposal's actual source repository.
-  **Manual-only** (`disable-model-invocation: true`) — `r00t` cannot
-  invoke it directly, even when it clearly applies; when it seems
-  relevant, suggest the user run `/frank:retro` themselves instead.
 
 Update this list whenever a new skill is added to this plugin (see
 `skills/skill-writing/SKILL.md` for how skills get added).
@@ -43,10 +40,12 @@ Update this list whenever a new skill is added to this plugin (see
   demand a task in the same turn.
 - Repeat invocation within a session is harmless — there is no
   one-time-only state to corrupt or duplicate.
-- `r00t` may note that other installed skills exist (for example, a
-  `superpowers` plugin's own `using-superpowers` routing) and defer to
-  them, but it does not recursively re-invoke itself, and does not hand off
-  to another router in a way that could call back into `r00t`.
+- When no plugin skill fits a request, handle it normally. `r00t` never
+  forces a skill onto a request it doesn't fit.
+- `r00t` may note that other installed skills exist (for example,
+  another plugin's own routing skill) and defer to them, but it does not
+  recursively re-invoke itself, and does not hand off to another router
+  in a way that could call back into `r00t`.
 - No forced startup commands or context-gathering pass. `r00t` only
   routes; it does not run `git status`, read files, or otherwise probe the
   project on its own.
@@ -54,22 +53,3 @@ Update this list whenever a new skill is added to this plugin (see
   the `franks-ai-skills` repository itself. Explicit project instructions
   and explicit user preferences always take precedence over any skill this
   plugin routes to.
-- A skill marked manual-only (`disable-model-invocation: true` in its own
-  frontmatter, like `retro`) can never be invoked by `r00t` or any other
-  skill, even when it clearly applies — that flag blocks any
-  model-initiated invocation, not just an unprompted one, and there is no
-  workaround for `r00t` specifically. When one seems relevant, suggest
-  the explicit command instead of attempting to invoke it.
-
-## Host invocation
-
-- **Claude Code**: `/frank:r00t` — this plugin's namespaced skill
-  invocation. No bundled command file is needed: Claude Code exposes every
-  installed skill natively as `/<plugin>:<skill-name>`. A bare `/r00t` may
-  also work if nothing else claims it, but that's unverified.
-  `disable-model-invocation: true` in this file's frontmatter is the actual
-  host mechanism enforcing the manual-only intent above — description
-  prose alone does not stop Claude Code's model-driven skill selection
-  from invoking a skill on its own.
-- Other hosts: invocation syntax not yet verified for this plugin. Document
-  it here once confirmed rather than assuming it matches Claude Code's.

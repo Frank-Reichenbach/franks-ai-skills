@@ -7,4 +7,4 @@ expect:
   - leads with what the skill does before secondary detail
   - avoids unexplained jargon or defines it on first use
   - matches the language of the request (English, since the prompt is English)
-  - applies the default voice guidelines (third person, direct, no inflated claims) unless the project or request says otherwise
+  - "uses a plain, factual voice, since repo documentation is engineering text: no self-praise or marketing framing, and not the client-facing default voice"

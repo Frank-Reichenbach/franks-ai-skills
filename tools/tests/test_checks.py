@@ -156,6 +156,19 @@ class LintSkillFrontmatterTests(unittest.TestCase):
         )
         self.assertTrue(any("reserved word" in e for e in errors))
 
+    def test_reserved_word_rejected_as_part_of_a_longer_name(self):
+        # Anthropic's rule bans the reserved word anywhere in the name,
+        # not only as the entire name — "claude-tools" is their own
+        # counter-example. An exact-match check used to let these pass.
+        for name in ("claude-tools", "anthropic-helper", "my-claude-thing"):
+            errors = checks.lint_skill_frontmatter(
+                name, {"name": name, "description": "x"}
+            )
+            self.assertTrue(
+                any("reserved word" in e for e in errors),
+                f"expected {name!r} to be rejected as containing a reserved word",
+            )
+
     def test_missing_description(self):
         errors = checks.lint_skill_frontmatter("skill-writing", {"name": "skill-writing"})
         self.assertIn("missing or empty 'description' in frontmatter", errors)
@@ -204,6 +217,38 @@ class LintPluginJsonTests(unittest.TestCase):
     def test_bad_name_format_is_rejected(self):
         errors = checks.lint_plugin_json(
             {"name": "Frank_Skills", "version": "0.1.0", "description": "x"}
+        )
+        self.assertTrue(any("lowercase letters" in e for e in errors))
+
+    def test_non_semver_version_is_rejected(self):
+        # Claude Code compares the version string to detect updates, and
+        # docs/releases.md mandates SemVer for it.
+        for version in ("1.0", "v0.1.1", "0.1.1.0", "01.0.0", "latest"):
+            errors = checks.lint_plugin_json(
+                {"name": "frank", "version": version, "description": "x"}
+            )
+            self.assertTrue(
+                any("SemVer" in e for e in errors),
+                f"expected {version!r} to be rejected as not SemVer",
+            )
+
+    def test_semver_with_prerelease_and_build_is_accepted(self):
+        for version in ("0.1.1", "1.0.0-rc.1", "2.3.4+build.7"):
+            errors = checks.lint_plugin_json(
+                {"name": "frank", "version": version, "description": "x"}
+            )
+            self.assertEqual(errors, [], f"expected {version!r} to be accepted")
+
+    def test_version_with_trailing_newline_is_rejected(self):
+        # `$` in re.match accepts a trailing newline; the check must not.
+        errors = checks.lint_plugin_json(
+            {"name": "frank", "version": "0.1.1\n", "description": "x"}
+        )
+        self.assertTrue(any("SemVer" in e for e in errors))
+
+    def test_name_with_trailing_newline_is_rejected(self):
+        errors = checks.lint_plugin_json(
+            {"name": "frank\n", "version": "0.1.1", "description": "x"}
         )
         self.assertTrue(any("lowercase letters" in e for e in errors))
 
@@ -268,7 +313,7 @@ class LintMarketplaceJsonTests(unittest.TestCase):
         data = {
             "name": "franks-ai-skills",
             "owner": {"name": "Frank Reichenbach"},
-            "plugins": [{"name": "frank", "source": "./"}],
+            "plugins": [{"name": "frank", "source": "./", "version": "0.1.0"}],
         }
         self.assertEqual(checks.lint_marketplace_json(data), [])
 
@@ -276,6 +321,35 @@ class LintMarketplaceJsonTests(unittest.TestCase):
         data = {"name": "franks-ai-skills", "owner": {"name": "Frank"}, "plugins": []}
         errors = checks.lint_marketplace_json(data)
         self.assertTrue(any("non-empty array" in e for e in errors))
+
+    def test_non_semver_plugin_version_is_rejected(self):
+        data = {
+            "name": "franks-ai-skills",
+            "owner": {"name": "Frank"},
+            "plugins": [{"name": "frank", "source": "./", "version": "0.1"}],
+        }
+        errors = checks.lint_marketplace_json(data)
+        self.assertTrue(any("SemVer" in e for e in errors))
+
+    def test_plugin_without_version_is_rejected(self):
+        # Claude Code reads this field for update detection in this repo's
+        # layout; without it, every pushed commit reads as a new version.
+        data = {
+            "name": "franks-ai-skills",
+            "owner": {"name": "Frank"},
+            "plugins": [{"name": "frank", "source": "./"}],
+        }
+        errors = checks.lint_marketplace_json(data)
+        self.assertTrue(any("version" in e for e in errors))
+
+    def test_plugin_version_with_trailing_newline_is_rejected(self):
+        data = {
+            "name": "franks-ai-skills",
+            "owner": {"name": "Frank"},
+            "plugins": [{"name": "frank", "source": "./", "version": "0.1.1\n"}],
+        }
+        errors = checks.lint_marketplace_json(data)
+        self.assertTrue(any("SemVer" in e for e in errors))
 
     def test_plugin_missing_source_is_rejected(self):
         data = {
@@ -299,7 +373,7 @@ class LintMarketplaceJsonTests(unittest.TestCase):
         data = {
             "name": "franks-ai-skills",
             "owner": {"name": "Frank"},
-            "plugins": [{"name": "frank", "source": "./", "strict": False}],
+            "plugins": [{"name": "frank", "source": "./", "version": "0.1.0", "strict": False}],
         }
         self.assertEqual(checks.lint_marketplace_json(data), [])
 
@@ -339,7 +413,7 @@ class LintMarketplaceJsonTests(unittest.TestCase):
                 "name": "Frank",
                 "url": "https://github.com/Frank-Reichenbach/franks-ai-skills",
             },
-            "plugins": [{"name": "frank", "source": "./"}],
+            "plugins": [{"name": "frank", "source": "./", "version": "0.1.0"}],
         }
         self.assertEqual(checks.lint_marketplace_json(data), [])
 
@@ -436,6 +510,24 @@ class LintEvalRequiredKeysTests(unittest.TestCase):
         self.assertTrue(errors)
 
 
+    def test_mapping_expectation_is_rejected(self):
+        # An unquoted "text: more text" item parses as a mapping, not a string.
+        text = "prompt: hi\nexpect:\n  - does the thing\n  - engineering text: no praise\n"
+        errors = checks.lint_eval_required_keys(text, ["prompt", "expect"])
+        self.assertTrue(any("expect[1]" in e for e in errors))
+
+    def test_non_list_expect_is_rejected(self):
+        text = "prompt: hi\nexpect: does the thing\n"
+        errors = checks.lint_eval_required_keys(text, ["prompt", "expect"])
+        self.assertTrue(any("'expect' must be a list" in e for e in errors))
+
+    def test_case_without_string_prompt_is_rejected(self):
+        text = "cases:\n  - expect_skill: demo\n  - just a string\n"
+        errors = checks.lint_eval_required_keys(text, ["cases"])
+        self.assertTrue(any("cases[0]" in e for e in errors))
+        self.assertTrue(any("cases[1]" in e for e in errors))
+
+
 import json
 import tempfile
 
@@ -488,7 +580,7 @@ class FileBasedChecksTests(unittest.TestCase):
                     {
                         "name": "franks-ai-skills",
                         "owner": {"name": "Frank"},
-                        "plugins": [{"name": "frank", "source": "./"}],
+                        "plugins": [{"name": "frank", "source": "./", "version": "0.1.0"}],
                     }
                 )
             )
@@ -542,7 +634,7 @@ class MainIntegrationTests(unittest.TestCase):
                     "plugins": [
                         {
                             "name": "frank",
-                            "source": "./",
+                            "source": "./", "version": "0.1.0",
                             "strict": False,
                             "skills": ["./skills/demo-skill"],
                         }
@@ -568,6 +660,15 @@ class MainIntegrationTests(unittest.TestCase):
             root = Path(tmp)
             self._write_valid_repo(root)
             self.assertEqual(checks.main(root), 0)
+
+    def test_main_returns_nonzero_for_malformed_scenario_eval(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._write_valid_repo(root)
+            (root / "evals" / "demo-skill" / "behavior-edge-case.yaml").write_text(
+                "prompt: hi\nexpect:\n  - voice: plain\n"
+            )
+            self.assertEqual(checks.main(root), 1)
 
     def test_main_returns_nonzero_when_skill_name_mismatched(self):
         with tempfile.TemporaryDirectory() as tmp:

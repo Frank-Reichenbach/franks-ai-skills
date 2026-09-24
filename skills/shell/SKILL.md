@@ -14,6 +14,13 @@ output/exit-status handling it provides — not because it enforces
 anything the host doesn't already enforce (it doesn't; see "Limits"
 below).
 
+Not for deciding what command to run, nor for the wording and voice of
+prose written about a result — `git-flow` and `technical-writing`
+(among others) make those calls; `shell` just executes what's already
+been decided. How *much* of a result to relay is a separate question,
+about context rather than wording, and this skill does answer it — see
+"Limits."
+
 ## How to invoke it
 
 ```
@@ -31,6 +38,11 @@ matches Claude Code's. **Quote `"${CLAUDE_PLUGIN_ROOT}/..."` itself, as
 shown above** — left unquoted, a plugin installed under a path
 containing a space breaks into multiple words and fails with "command
 not found."
+
+Requires `bash`, `sed`, and `iconv` — all present by default on macOS
+and the Linux CI images this plugin has been tested against (per
+`docs/security.md`'s rule to document required external binaries). No
+network access is needed.
 
 ## Read-only vs. everything else
 
@@ -125,3 +137,10 @@ gate this — see "Limits."
   buffered and invisible until the command completes, which it won't if
   it's waiting on input that will never arrive. Don't route an
   interactive command through this wrapper.
+- The output bound (`RUN_SH_MAX_OUTPUT_BYTES`, default 200 KB) exists to
+  keep the conversation's own context clean, not just to cap a runaway
+  command. When relaying a command's result, summarize what it means
+  rather than pasting the full output back — even output that's already
+  within the limit — unless the raw text is what the result is being
+  used to *prove* (an error message, a diff, the evidence behind a
+  review finding), or is what was asked for.

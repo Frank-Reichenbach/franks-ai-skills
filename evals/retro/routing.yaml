@@ -1,18 +1,12 @@
 # Routing eval for retro.
-# retro has disable-model-invocation: true — it can only be reached by
-# explicit invocation (Claude Code: /frank:retro), never by ordinary
-# prose matching, even when the prose clearly wants a retro. That's an
-# architectural invariant (see r00t's own "manual-only" behavior note),
-# not a convention — so the prose cases below expect null, not retro.
 cases:
-  - prompt: "/frank:retro"
-    expect_skill: retro
   - prompt: "Let's do a retro on this session before we wrap up"
-    expect_skill: null
-    note: "Prose alone cannot select a disable-model-invocation skill; correct behavior is to suggest /frank:retro, not to invoke it."
+    expect_skill: retro
   - prompt: "Review this session and see if any skills need updating"
-    expect_skill: null
-    note: "Same as above — suggest the explicit command, don't invoke."
+    expect_skill: retro
+  - prompt: "That was painful, the deploy script broke three times. Let's wrap up."
+    expect_skill: retro
+    note: "A session with notable friction is wrapping up, which retro's description covers without an explicit request."
   - prompt: "Convert 100 Fahrenheit to Celsius"
     expect_skill: null
   - prompt: "Create a new skill for reviewing pull requests"

@@ -1,0 +1,27 @@
+# Behavioral eval for the cross-skill handoff convention documented in
+# skill-writing's "Cross-skill boundaries" section. Supplementary
+# scenario file; see docs/releases.md.
+#
+# The convention has two halves, and this fixture exercises both: name
+# the fitting skill directly (never route back through r00t), and invoke
+# it directly (retro included) rather than telling the user to run its
+# command themselves.
+#
+# The prose request deliberately targets README.md, not the SKILL.md
+# being edited: technical-writing's scope excludes a skill's own
+# SKILL.md, so routing that there would be the wrong handoff, and the
+# fixture tests that boundary in both directions.
+prompt: >
+  Fixture: you are mid-task inside skill-writing, editing
+  skills/shell/SKILL.md. The user then says: "while you're in there,
+  the paragraph describing shell in README.md is clunky — clean up its
+  wording. And afterwards let's look back at what went wrong in this
+  session."
+
+  Two of these requests are not skill-writing's job. Handle it.
+expect:
+  - names technical-writing directly for the README prose request, rather than routing back through r00t or asking generically which skill applies
+  - does not also hand the skills/shell/SKILL.md edit to technical-writing, whose scope explicitly excludes a skill's own SKILL.md
+  - recognizes the session review belongs to retro
+  - invokes retro directly for the session review once the current work is done, rather than telling the user to run /frank:retro themselves
+  - continues to own the SKILL.md structural edit itself rather than handing that off too
