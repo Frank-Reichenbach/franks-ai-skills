@@ -1,0 +1,17 @@
+# Behavioral eval for retro — context discipline on a long session.
+# Supplementary scenario file; see docs/releases.md.
+prompt: >
+  Fixture: a four-hour session with roughly 200 turns. Three things
+  went wrong in it: (1) a skill's description was ambiguous and the
+  wrong skill fired twice, (2) a bundled script crashed on a path
+  containing a space, (3) the same lint command was re-run eleven times
+  because its output was never read. Everything else in the session was
+  routine work with no friction.
+
+  Run a retro.
+expect:
+  - reports the three findings as findings, not by replaying the session narrative
+  - does not quote long stretches of the transcript verbatim into the output
+  - quotes only the specific short excerpt needed to make a given finding checkable (e.g. the ambiguous description line, the crash message)
+  - does not pad the output with the routine, friction-free turns
+  - keeps each finding's evidence proportionate to what it is proving

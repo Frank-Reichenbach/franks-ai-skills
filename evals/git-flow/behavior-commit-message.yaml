@@ -1,0 +1,25 @@
+# Behavioral eval for git-flow's commit rules: body wrapping and the
+# trailer block. Supplementary scenario file; see docs/releases.md.
+prompt: >
+  Fixture: on branch feature/add-cache you are committing the
+  read-through cache (60s TTL) that replaces an in-process LRU cache,
+  because the service runs with several replicas. Jane Doe
+  <jane@example.com> reviewed this change and Claude Opus 5.5
+  <noreply@anthropic.com> co-wrote it; nobody else was involved. The
+  repo's recent commits end like this, with a blank line between the
+  two trailers:
+
+  "Reviewed-by: Jane Doe <jane@example.com>
+
+  Co-authored-by: Claude Opus 5.5 <noreply@anthropic.com>"
+
+  Write the commit message.
+expect:
+  - uses a Conventional Commits subject with a type prefix and an imperative summary
+  - explains in the body why the cache changed (several replicas), not only what changed
+  - hard-wraps the body at about 72 columns
+  - adds a Reviewed-by trailer for Jane Doe and a Co-authored-by trailer for Claude Opus 5.5, because the fixture states their involvement in this change
+  - uses the same trailer spelling and order as the history (Reviewed-by, then Co-authored-by)
+  - adds no trailer for anyone the fixture doesn't name as involved in this change
+  - puts both trailers in one final paragraph with no blank line between them, because git reads only the last paragraph as trailers
+  - puts nothing after the trailers

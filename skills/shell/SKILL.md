@@ -14,6 +14,13 @@ output/exit-status handling it provides — not because it enforces
 anything the host doesn't already enforce (it doesn't; see "Limits"
 below).
 
+Not for deciding what command to run, nor for the wording and voice of
+prose written about a result — `git-flow` and `technical-writing`
+(among others) make those calls; `shell` just executes what's already
+been decided. How *much* of a result to relay is a separate question,
+about context rather than wording, and this skill does answer it — see
+"Limits."
+
 ## How to invoke it
 
 ```
@@ -32,6 +39,11 @@ shown above** — left unquoted, a plugin installed under a path
 containing a space breaks into multiple words and fails with "command
 not found."
 
+Requires `bash`, `sed`, and `iconv` — all present by default on macOS
+and the Linux CI images this plugin has been tested against (per
+`docs/security.md`'s rule to document required external binaries). No
+network access is needed.
+
 ## Read-only vs. everything else
 
 Judge this yourself — there's no fixed allowlist. If a command is
@@ -49,23 +61,25 @@ gate this — see "Limits."
    string against a best-effort list of known secret-location patterns
    (`.env`, `*.pem`, `id_rsa`/`id_ed25519`, `.ssh/*`, common credentials
    file names). On a match, it refuses to run and exits non-zero,
-   printing which pattern matched.
+   printing only the kind of location that matched (for example
+   `.pem file`) — never the matched text, which can include a secret
+   glued to the path.
 2. **User-authorized override only.** On a block, the procedure is:
-   explain what was blocked and why (which pattern matched), then ask
-   the user whether to proceed — and wait for their answer. Only after
-   the user has actually said yes, re-invoke with `--allow-secret-path`
-   as the first argument. **This override comes from the user, never
-   from the agent on its own initiative** — retrying with the flag the
-   moment a command is blocked, without the user actually authorizing
-   it, defeats the check entirely. The flag is proof the check should be
-   skipped for *this* invocation, nothing more — the script only checks
-   for the flag's presence, not that a human actually approved it, so
-   supplying it without real authorization is the agent defeating its
-   own safety check, not a system enforcing anything. If the user has
-   already authorized this specific access earlier in the session,
-   that authorization holds — don't re-ask for the same access. Don't
-   route around a block by reaching for a different command or tool to
-   reach the same file instead.
+   explain what was blocked and why (which kind of location matched),
+   then ask the user whether to proceed — and wait for their answer.
+   Only after the user has actually said yes, re-invoke with
+   `--allow-secret-path` as the first argument. **This override comes
+   from the user, never from the agent on its own initiative** —
+   retrying with the flag the moment a command is blocked, without the
+   user actually authorizing it, defeats the check entirely. The flag is
+   proof the check should be skipped for *this* invocation, nothing more
+   — the script only checks for the flag's presence, not that a human
+   actually approved it, so supplying it without real authorization is
+   the agent defeating its own safety check, not a system enforcing
+   anything. If the user has already authorized this specific access
+   earlier in the session, that authorization holds — don't re-ask for
+   the same access. Don't route around a block by reaching for a
+   different command or tool to reach the same file instead.
 3. **Redacted echo.** Once past the check, it prints the command it's
    about to run, with secret-shaped substrings (bearer tokens, `sk-`
    style API keys, `key=`/`token=` values) masked in that echo — not
@@ -125,3 +139,10 @@ gate this — see "Limits."
   buffered and invisible until the command completes, which it won't if
   it's waiting on input that will never arrive. Don't route an
   interactive command through this wrapper.
+- The output bound (`RUN_SH_MAX_OUTPUT_BYTES`, default 200 KB) exists to
+  keep the conversation's own context clean, not just to cap a runaway
+  command. When relaying a command's result, summarize what it means
+  rather than pasting the full output back — even output that's already
+  within the limit — unless the raw text is what the result is being
+  used to *prove* (an error message, a diff, the evidence behind a
+  review finding), or is what was asked for.

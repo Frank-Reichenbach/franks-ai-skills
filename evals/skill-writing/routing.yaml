@@ -9,6 +9,7 @@ cases:
   - prompt: "How do I add a new plugin entry to this repo's marketplace?"
     expect_skill: skill-writing
   - prompt: "Fix the typo in README.md"
-    expect_skill: null
+    expect_skill: technical-writing
+    note: "technical-writing covers every edit to technical prose, typo fixes included."
   - prompt: "What's the weather like today?"
     expect_skill: null

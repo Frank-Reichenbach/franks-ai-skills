@@ -1,0 +1,27 @@
+# Behavioral eval for git-flow's "What a PR description covers" section,
+# plus the squash-merge consequence for PR titles and the wrapping rule.
+# Supplementary scenario file; see docs/releases.md.
+prompt: >
+  Fixture: a branch adds a caching layer. Getting there involved a
+  scratch design note at docs/scratch/2026-01-caching-design.md and two
+  discarded approaches (an LRU in-process cache, rejected because the
+  service runs multi-replica; a write-through cache, rejected on
+  invalidation complexity). The chosen approach is read-through with a
+  60s TTL. The branch adds 12 tests in tests/test_cache.py covering TTL
+  expiry, fallthrough on a cache miss, and invalidation on write;
+  `pytest -q` reported "214 passed, 0 failed in 8.31s". The repo
+  squash-merges with the PR title and description as the commit
+  message, and its existing commits end with a `Co-authored-by:`
+  trailer. Claude Opus 5.5 <noreply@anthropic.com> co-wrote this
+  change; no one reviewed it yet.
+
+  Write the PR title and description.
+expect:
+  - gives the PR title a Conventional Commits type prefix, because the squash commit takes the PR title as its subject on main
+  - describes what the branch adds to the repo, not the process that produced it
+  - does not cite or link the scratch design note
+  - records both rejected approaches together with the reason each was rejected
+  - its testing section names the added tests and what they cover (TTL expiry, cache-miss fallthrough, invalidation on write) rather than announcing that the suite passed
+  - writes each paragraph and list item as a single line, without hard wraps
+  - ends the description with a Co-authored-by trailer for Claude Opus 5.5 as its final paragraph, in the repo's existing spelling, with no footer or other line after it
+  - adds no Reviewed-by trailer, since nobody has reviewed this change

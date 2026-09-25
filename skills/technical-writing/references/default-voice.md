@@ -1,9 +1,12 @@
 # Default voice
 
-A default tone and vocabulary for technical writing, applied unless the
-project's own conventions or an explicit request say otherwise — see
-`SKILL.md`'s "Tone and voice" section. This file's content is
-organization-specific; its name stays generic on purpose.
+A default tone and vocabulary for client-facing technical writing,
+applied unless the project's own conventions or an explicit request say
+otherwise — see `SKILL.md`'s "Tone and voice" section. Engineering text
+(commit messages, PR descriptions, review comments, issues) uses a plain,
+factual voice instead; only the "Don't" list below applies to it. This
+file's content is organization-specific; its name stays generic on
+purpose.
 
 ## Character
 

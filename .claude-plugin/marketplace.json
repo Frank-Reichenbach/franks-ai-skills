@@ -11,7 +11,7 @@
       "source": "./",
       "strict": false,
       "description": "Frank's personal AI skill collection",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "skills": ["./skills/skill-writing", "./skills/r00t", "./skills/technical-writing", "./skills/git-flow", "./skills/shell", "./skills/retro"]
     }
   ]

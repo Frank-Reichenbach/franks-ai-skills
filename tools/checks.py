@@ -26,6 +26,14 @@ NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 RESERVED_NAMES = {"anthropic", "claude"}
 MAX_NAME_LEN = 64
 MAX_DESCRIPTION_LEN = 1024
+# SemVer 2.0.0, from semver.org's reference pattern, with [0-9] instead of
+# \d so non-ASCII digits don't pass.
+SEMVER_RE = re.compile(
+    r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
+    r"(?:-((?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)"
+    r"(?:\.(?:0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?"
+    r"(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
+)
 
 
 def parse_frontmatter(text: str) -> dict[str, str]:
@@ -74,15 +82,21 @@ def lint_skill_frontmatter(dir_name: str, frontmatter: dict[str, str]) -> list[s
     if not name:
         errors.append("missing 'name' in frontmatter")
     else:
-        if not NAME_RE.match(name):
+        if not NAME_RE.fullmatch(name):
             errors.append(
                 f"name '{name}' must be lowercase letters, numbers, and "
                 "hyphens only"
             )
         if len(name) > MAX_NAME_LEN:
             errors.append(f"name '{name}' exceeds {MAX_NAME_LEN} characters")
-        if name in RESERVED_NAMES:
-            errors.append(f"name '{name}' is a reserved word")
+        # Reserved words are banned anywhere in the name, not just as the
+        # whole name — Anthropic's naming rule rejects "claude-tools" and
+        # "anthropic-helper", not only a bare "claude"/"anthropic".
+        for reserved in sorted(RESERVED_NAMES):
+            if reserved in name:
+                errors.append(
+                    f"name '{name}' contains the reserved word '{reserved}'"
+                )
         if name != dir_name:
             errors.append(
                 f"name '{name}' does not match directory name '{dir_name}'"
@@ -107,10 +121,13 @@ def lint_plugin_json(data: dict) -> list[str]:
         if not isinstance(value, str) or not value.strip():
             errors.append(f"'{field}' must be a non-empty string")
     name = data.get("name")
-    if isinstance(name, str) and not NAME_RE.match(name):
+    if isinstance(name, str) and not NAME_RE.fullmatch(name):
         errors.append(
             f"name '{name}' must be lowercase letters, numbers, and hyphens only"
         )
+    version = data.get("version")
+    if isinstance(version, str) and version.strip() and not SEMVER_RE.fullmatch(version):
+        errors.append(f"version '{version}' is not SemVer (MAJOR.MINOR.PATCH)")
 
     if "license" in data:
         license_ = data["license"]
@@ -154,13 +171,24 @@ def lint_marketplace_json(data: dict) -> list[str]:
             errors.append(f"plugins[{i}] must be an object")
             continue
         name = plugin.get("name")
-        if not isinstance(name, str) or not NAME_RE.match(name):
+        if not isinstance(name, str) or not NAME_RE.fullmatch(name):
             errors.append(
                 f"plugins[{i}].name '{name}' must be lowercase letters, "
                 "numbers, and hyphens only"
             )
         if "source" not in plugin:
             errors.append(f"plugins[{i}] is missing 'source'")
+
+        # Required: in this layout Claude Code reads the marketplace entry's
+        # version for update detection (see docs/releases.md).
+        version = plugin.get("version")
+        if version is None:
+            errors.append(f"plugins[{i}] is missing 'version'")
+        elif not isinstance(version, str) or not SEMVER_RE.fullmatch(version):
+            errors.append(
+                f"plugins[{i}].version '{version}' is not SemVer "
+                "(MAJOR.MINOR.PATCH)"
+            )
 
         if "strict" in plugin and not isinstance(plugin["strict"], bool):
             errors.append(f"plugins[{i}].strict must be a boolean if present")
@@ -215,18 +243,46 @@ def lint_manifest_consistency(
 
 
 def lint_eval_required_keys(text: str, required_keys: list[str]) -> list[str]:
-    """Check that each required key exists as a top-level key in the YAML."""
+    """Check an eval file's required top-level keys and the shape of their items.
+
+    `expect` must be a list of strings — an unquoted "text: more text" item
+    parses as a mapping — and each entry of `cases` must be a mapping with a
+    string `prompt`.
+    """
     try:
         data = yaml.safe_load(text)
     except yaml.YAMLError as exc:
         return [f"invalid YAML ({exc})"]
     if not isinstance(data, dict):
         return ["top-level value must be a YAML mapping"]
-    return [
+    errors = [
         f"missing required top-level key '{key}'"
         for key in required_keys
         if key not in data
     ]
+
+    if "expect" in data:
+        expect = data["expect"]
+        if not isinstance(expect, list):
+            errors.append("'expect' must be a list")
+        else:
+            for i, item in enumerate(expect):
+                if not isinstance(item, str) or not item.strip():
+                    errors.append(
+                        f"expect[{i}] must be a non-empty string, got "
+                        f"{type(item).__name__} (quote items containing ': ')"
+                    )
+
+    if "cases" in data:
+        cases = data["cases"]
+        if not isinstance(cases, list):
+            errors.append("'cases' must be a list")
+        else:
+            for i, case in enumerate(cases):
+                if not isinstance(case, dict) or not isinstance(case.get("prompt"), str):
+                    errors.append(f"cases[{i}] must be a mapping with a string 'prompt'")
+
+    return errors
 
 
 def check_skill_file(path: Path) -> list[str]:
@@ -306,6 +362,8 @@ def main(root: Path = REPO_ROOT) -> int:
         name = skill_dir.name
         errors += check_eval_file(evals_root / name / "routing.yaml", ["cases"])
         errors += check_eval_file(evals_root / name / "behavior.yaml", ["prompt", "expect"])
+        for scenario in sorted((evals_root / name).glob("behavior-*.yaml")):
+            errors += check_eval_file(scenario, ["prompt", "expect"])
 
     errors += check_eval_file(evals_root / "catalog" / "collisions.yaml", ["cases"])
 

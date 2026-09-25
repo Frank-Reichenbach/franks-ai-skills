@@ -1,6 +1,7 @@
 # Behavioral eval for r00t.
 prompt: >
-  /r00t
+  Fixture: a new session starts in a project that has this plugin
+  installed. The user's first message is "Hi, let's get started."
 expect:
   - acknowledges the session-wide routing convention rather than staying silent or asking for a task
   - does not perform any startup context-gathering (no git status, no file reads) on its own
