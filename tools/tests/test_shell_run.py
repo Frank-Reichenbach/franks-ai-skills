@@ -219,6 +219,56 @@ class SecretPathCheckTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertNotIn("do-not-print-me", result.stdout)
 
+    def test_blocked_diagnostic_does_not_repeat_glued_secrets(self):
+        # Regression: the diagnostic used to print the raw regex match, and
+        # the .pem alternative extends back to the previous whitespace, so a
+        # secret glued to the path was printed in full. PASSWORD= is a format
+        # redact() doesn't know, so redacting the match would not be enough.
+        for cmd in (
+            "TOKEN=FAKE_TEST_SECRET_1234;cat<client.pem",
+            "PASSWORD=FAKE_PW_5678;cat<client.pem",
+        ):
+            with self.subTest(cmd=cmd):
+                result = run_wrapper([cmd])
+                self.assertEqual(result.returncode, 3)
+                secret = cmd.split("=", 1)[1].split(";", 1)[0]
+                self.assertNotIn(secret, result.stdout + result.stderr)
+                self.assertIn(".pem file", result.stderr)
+
+    def test_blocked_diagnostic_names_only_the_category(self):
+        cases = [
+            ("cat .env.local", ".env file"),
+            ("cat server.pem", ".pem file"),
+            ("cat ~/.ssh/id_ed25519", "SSH key file"),
+            ("cat ~/.ssh/id_rsa.pub", "SSH key file"),
+            ("ls ~/.ssh/", ".ssh directory"),
+            ("cat ~/.aws/credentials", "AWS credentials file"),
+            ("cat credentials.json", "credentials file"),
+            ("cat ~/.netrc", ".netrc file"),
+        ]
+        for cmd, label in cases:
+            with self.subTest(cmd=cmd):
+                result = run_wrapper([cmd])
+                self.assertEqual(result.returncode, 3)
+                self.assertIn(f"(matched: {label})", result.stderr)
+                # The command text itself never appears in the diagnostic.
+                self.assertNotIn(cmd, result.stderr)
+
+    def test_invalid_utf8_does_not_bypass_the_check(self):
+        # Regression: in a UTF-8 locale an invalid byte made the regex
+        # match fail, so `cat .env #\xff` ran and printed the file.
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / ".env").write_text("PASSWORD=FAKE_PW_5678\n")
+            result = subprocess.run(
+                ["bash", str(RUN_SH), b"cat .env #\xff"],
+                capture_output=True,
+                cwd=tmp,
+                env={**os.environ, "LC_ALL": "en_US.UTF-8"},
+            )
+            self.assertEqual(result.returncode, 3)
+            self.assertNotIn(b"FAKE_PW_5678", result.stdout + result.stderr)
+            self.assertIn(b"(matched: .env file)", result.stderr)
+
 
 class RedactionFailureTests(unittest.TestCase):
     def test_unredactable_stdout_is_withheld_not_shown_raw_or_partial(self):

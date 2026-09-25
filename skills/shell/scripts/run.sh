@@ -39,7 +39,49 @@ fi
 # boundaries, not just whitespace, so `cat ".env"` and `cat .env; true`
 # are caught the same as `cat .env`. Cannot see what a called script
 # reads internally.
-SECRET_PATH_PATTERN='(^|[^A-Za-z0-9_-])(\.env([.][A-Za-z0-9_.-]+)?|[^[:space:]]*\.pem|id_rsa|id_ed25519|\.ssh/[A-Za-z0-9_./-]*|credentials(\.json)?|\.aws/credentials|\.netrc)([^A-Za-z0-9_-]|$)'
+#
+# One entry per category: a fixed label and its pattern. On a match the
+# diagnostic prints only the label, never the matched text — a match can
+# span secrets glued to the path (the .pem pattern extends back to the
+# previous whitespace), in formats redact() doesn't know. The more
+# specific .aws/credentials comes before the generic credentials entry
+# so it gets its own label.
+SECRET_PATH_BOUNDARY_START='(^|[^A-Za-z0-9_-])'
+SECRET_PATH_BOUNDARY_END='([^A-Za-z0-9_-]|$)'
+SECRET_PATH_LABELS=(
+  ".env file"
+  ".pem file"
+  "SSH key file"
+  ".ssh directory"
+  "AWS credentials file"
+  "credentials file"
+  ".netrc file"
+)
+SECRET_PATH_CORES=(
+  '\.env([.][A-Za-z0-9_.-]+)?'
+  '[^[:space:]]*\.pem'
+  'id_rsa|id_ed25519'
+  '\.ssh/[A-Za-z0-9_./-]*'
+  '\.aws/credentials'
+  'credentials(\.json)?'
+  '\.netrc'
+)
+
+# Prints the label of the first category the command matches; returns 1
+# if none does. Matches bytewise (LC_ALL=C): in a UTF-8 locale an invalid
+# byte anywhere in the command makes the regex match fail, which would
+# let `cat .env #<invalid byte>` through unchecked.
+secret_path_label() {
+  local i pattern LC_ALL=C
+  for i in "${!SECRET_PATH_CORES[@]}"; do
+    pattern="${SECRET_PATH_BOUNDARY_START}(${SECRET_PATH_CORES[$i]})${SECRET_PATH_BOUNDARY_END}"
+    if [[ "$1" =~ $pattern ]]; then
+      printf '%s' "${SECRET_PATH_LABELS[$i]}"
+      return 0
+    fi
+  done
+  return 1
+}
 
 allow_secret_path=0
 if [[ "${1:-}" == "--allow-secret-path" ]]; then
@@ -54,8 +96,8 @@ fi
 
 cmd="$1"
 
-if [[ "$allow_secret_path" -eq 0 ]] && [[ "$cmd" =~ $SECRET_PATH_PATTERN ]]; then
-  echo "run.sh: blocked — command appears to reference a secret location (matched: '${BASH_REMATCH[0]}')." >&2
+if [[ "$allow_secret_path" -eq 0 ]] && matched_label=$(secret_path_label "$cmd"); then
+  echo "run.sh: blocked — command appears to reference a secret location (matched: ${matched_label})." >&2
   echo "run.sh: best-effort pattern match, not a guarantee. If the user has explicitly authorized this, re-run with --allow-secret-path as the first argument." >&2
   exit 3
 fi

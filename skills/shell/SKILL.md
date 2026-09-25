@@ -61,23 +61,25 @@ gate this — see "Limits."
    string against a best-effort list of known secret-location patterns
    (`.env`, `*.pem`, `id_rsa`/`id_ed25519`, `.ssh/*`, common credentials
    file names). On a match, it refuses to run and exits non-zero,
-   printing which pattern matched.
+   printing only the kind of location that matched (for example
+   `.pem file`) — never the matched text, which can include a secret
+   glued to the path.
 2. **User-authorized override only.** On a block, the procedure is:
-   explain what was blocked and why (which pattern matched), then ask
-   the user whether to proceed — and wait for their answer. Only after
-   the user has actually said yes, re-invoke with `--allow-secret-path`
-   as the first argument. **This override comes from the user, never
-   from the agent on its own initiative** — retrying with the flag the
-   moment a command is blocked, without the user actually authorizing
-   it, defeats the check entirely. The flag is proof the check should be
-   skipped for *this* invocation, nothing more — the script only checks
-   for the flag's presence, not that a human actually approved it, so
-   supplying it without real authorization is the agent defeating its
-   own safety check, not a system enforcing anything. If the user has
-   already authorized this specific access earlier in the session,
-   that authorization holds — don't re-ask for the same access. Don't
-   route around a block by reaching for a different command or tool to
-   reach the same file instead.
+   explain what was blocked and why (which kind of location matched),
+   then ask the user whether to proceed — and wait for their answer.
+   Only after the user has actually said yes, re-invoke with
+   `--allow-secret-path` as the first argument. **This override comes
+   from the user, never from the agent on its own initiative** —
+   retrying with the flag the moment a command is blocked, without the
+   user actually authorizing it, defeats the check entirely. The flag is
+   proof the check should be skipped for *this* invocation, nothing more
+   — the script only checks for the flag's presence, not that a human
+   actually approved it, so supplying it without real authorization is
+   the agent defeating its own safety check, not a system enforcing
+   anything. If the user has already authorized this specific access
+   earlier in the session, that authorization holds — don't re-ask for
+   the same access. Don't route around a block by reaching for a
+   different command or tool to reach the same file instead.
 3. **Redacted echo.** Once past the check, it prints the command it's
    about to run, with secret-shaped substrings (bearer tokens, `sk-`
    style API keys, `key=`/`token=` values) masked in that echo — not
