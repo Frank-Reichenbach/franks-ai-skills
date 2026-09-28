@@ -1,7 +1,8 @@
 # Behavioral eval for retro's classification of memory entries into
 # project-config, harness-specific skill-update, bug-issue and drop,
 # and for clearing all of them. Supplementary scenario file; see
-# docs/releases.md. The entries and the tool "fetchr" are fictional.
+# docs/releases.md. The acme-api repo, the four memory entries and the
+# tool "fetchr" are fictional example values.
 prompt: >
   Fixture: you are running a retro in the acme-api repository, which
   has an AGENTS.md. The session had no friction. The host's persistent
@@ -27,4 +28,5 @@ expect:
   - classifies "fetchr-proxy" as a bug-issue against github.com/example/fetchr, with the workaround in the issue body
   - classifies "emoji" as drop, because it is a personal preference with no general or project rule behind it, and says so
   - shows each proposal's concrete content before asking whether to implement it
-  - after the per-item choices, lists all four entries with where each one's content went, including the dropped one, and deletes all four
+  - after the per-item choices, lists all four entries with where each one's content went, including the dropped one, and asks the user to acknowledge that list
+  - deletes no entry before that acknowledgment, and then deletes every acknowledged entry, the dropped one included

@@ -52,7 +52,7 @@ for anything that's changed since.
 - `retro` — reviews a session and the agent's memory, proposes skill
   updates, new skills, project configuration changes, or bug reports,
   targeting each proposal's actual source repository, and clears the
-  memory entries it reviewed.
+  memory entries it reviewed once the user acknowledges them.
 
 See `skills/skill-writing/SKILL.md` for how to add another.
 

@@ -1,6 +1,6 @@
 ---
 name: retro
-description: "Reviews the current session (or a described problem within it) and the agent's persistent memory, and proposes skill updates, new skills, project configuration changes, or bug reports as GitHub issues — each shown concretely before a per-item choice to implement now or just record the proposal. Memory entries it reviews are cleared as part of the retro. Edits target the relevant skill's actual source repo, never an installed plugin cache. Use when the user asks for a retro, a lessons-learned pass, or a review of what went wrong in a session, or when a session with notable friction is wrapping up."
+description: "Reviews the current session (or a described problem within it) and the agent's persistent memory, and proposes skill updates, new skills, project configuration changes, or bug reports as GitHub issues — each shown concretely before a per-item choice to implement now or just record the proposal. Memory entries it reviews are cleared as part of the retro once the user acknowledges them. Edits target the relevant skill's actual source repo, never an installed plugin cache. Use when the user asks for a retro, a lessons-learned pass, or a review of what went wrong in a session, or when a session with notable friction is wrapping up."
 ---
 
 # Retro
@@ -13,7 +13,7 @@ existing skill that should change, a gap that needs a new skill, a rule
 that belongs in one project's own configuration, or a bug worth filing
 as a GitHub issue. Memory is not a place where rules stay: every entry
 the retro reviews ends up in one of those places, or is dropped, and is
-then cleared.
+cleared once the user acknowledges it.
 
 Not a substitute for `skill-writing`'s own authoring conventions: when a
 proposal is a skill-update, drafting the actual `SKILL.md` content still
@@ -88,18 +88,22 @@ the same as any other technical writing.
    `git-flow`'s conventions) or files the bug-issue immediately;
    anything else leaves it recorded as a proposal in the session output,
    not acted on.
-6. **Clear the reviewed memory entries.** After the per-item choices,
-   delete every memory entry this retro reviewed, whatever its bucket
-   and whether or not it was implemented. First list each entry with
+6. **Clear the reviewed memory entries once acknowledged.** After the
+   per-item choices, list every memory entry this retro reviewed with
    where its content went: a commit or PR, an issue, a proposal in this
-   retro's output, or dropped with its reason. Memory doesn't keep a
-   second copy of a rule that now lives elsewhere, and a dropped entry
-   has nothing left to keep.
+   retro's output, or dropped with its reason. Then ask the user to
+   acknowledge the list, and delete only after they have — every entry
+   they acknowledge, whatever its bucket and whether or not it was
+   implemented. An entry they want to keep stays. Never delete a memory
+   entry without that acknowledgment. Memory doesn't keep a second copy
+   of a rule that now lives elsewhere, and a dropped entry has nothing
+   left to keep.
 
 ## Output
 
 A grouped list of proposals (skill-update / new-skill / project-config /
 bug-issue / drop), each with its concrete content and its target
 repository named explicitly, followed by whatever was actually
-implemented versus left as a proposal, and the memory entries cleared,
-each with where its content went.
+implemented versus left as a proposal, and the memory entries listed
+for acknowledgment, each with where its content went and whether it
+was deleted.
