@@ -43,8 +43,7 @@ that need to change — not the whole document.
   to hold two claims, consider two sentences instead.
 - **Lead with the point.** State the conclusion or the ask first, then the
   supporting detail — never bury the answer at the end of a paragraph.
-  For a change description, that is the state after the change ("When
-  this merges, X does Y").
+  For a change description, that is what the change does and why.
 - **Write for a junior reader.** Don't assume unexplained jargon, acronyms,
   or tool-specific shorthand. If a term is genuinely necessary, define it
   on first use.
