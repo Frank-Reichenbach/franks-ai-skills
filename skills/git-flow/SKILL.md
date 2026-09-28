@@ -63,6 +63,10 @@ from earlier commits.
   Assisted-by: GPT-6 Astra (code review)
   ```
 
+  `Assisted-by` rather than `Co-authored-by`, which names a person who
+  shares responsibility for the change; the Linux kernel uses
+  `Assisted-by` for AI tools (`Documentation/process/coding-assistants.rst`).
+
 - **People** get `Co-authored-by: Name <email>` as co-author and
   `Reviewed-by: Name <email>` as reviewer.
 - Capitalize only the first letter of a trailer key (`Assisted-by`, not
@@ -131,17 +135,23 @@ diff cannot say. Default layout, in this order, with plain headings:
    including the alternatives that were rejected and on what grounds. A
    rejected option with its reason stops the next person re-proposing
    it.
-4. **Sources** — where factual claims come from. If a claim rests on a
-   document or an existing implementation, name it rather than
-   asserting it.
-5. **Tests** — what the tests and checks cover: which tests or evals
+4. **Tests** — what the tests and checks cover: which tests or evals
    were added and which behaviour they exercise, plus any manual check
    CI doesn't run, with what it showed. For a fix, the behaviour before
    and after, as captured output rather than a claim. Don't announce
    that checks passed; state a check's status only to flag an exception
    (knowingly failing or skipped).
-6. **Attribution trailers** as the final paragraph, nothing after them,
+5. **Attribution trailers** as the final paragraph, nothing after them,
    not even a tool footer.
+
+**Sources go next to the claim, not in a section of their own.** When a
+claim or decision rests on a document or an existing implementation,
+name it in the same sentence ("as in the Linux kernel"), so the reader
+doesn't have to match a list of sources to claims. Evidence that a rule
+in the repo depends on belongs in the file where that rule lives — the
+skill, the doc, the code comment — where the next person editing the
+rule will see it. Don't repeat it in the description; name a source
+there only when the repo doesn't record it.
 
 Leave out a section that has nothing to say, and scale the rest to the
 change: a one-line fix needs a sentence, not a section tree. The
