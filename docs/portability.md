@@ -7,6 +7,6 @@ This repo publishes two manifests; neither is generated from the other:
 
 Both point at the same canonical `skills/` directory. Nothing is generated or duplicated between them.
 
-Because of this, every `SKILL.md` body should stay vendor-neutral — see the "Vendor-neutral wording" section in the `skill-writing` skill. The manifests are allowed to be client-specific; skill content is too only where it is proven harness-specific, and then only in `references/<harness>.md` (see "Harness-specific content" in `skill-writing`).
+Because of this, every `SKILL.md` body should stay vendor-neutral — see the "Vendor-neutral wording" section in the `skill-writing` skill. The manifests are allowed to be client-specific; skill content is too only where it is proven harness-specific, and where that content goes is defined by "Harness-specific content" in `skill-writing`.
 
 OpenCode reads neither manifest. It discovers skill folders directly (`.opencode/skills/`, `.claude/skills/`, `.agents/skills/` and their global equivalents) and has no update detection for local skill folders.
