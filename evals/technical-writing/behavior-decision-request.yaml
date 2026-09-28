@@ -1,0 +1,21 @@
+# Behavioral eval for technical-writing's "Decision requests" section.
+# Supplementary scenario file; see docs/releases.md. The service, the
+# numbers and the reviewer's claim are fictional example values.
+prompt: >
+  Fixture: a reviewer says the nightly export job of the billing service
+  should move from a cron job on a VM to a managed scheduler, and claims
+  the VM costs 400 EUR per month. You have verified that the job failed
+  silently twice last month because the VM was patched and rebooted
+  during the run. You have not verified the cost figure. The options are
+  (A) move to the managed scheduler, (B) keep the VM and add a
+  maintenance window plus alerting, (C) leave it as is. The team lead
+  has to decide.
+
+  Write the decision request for the team lead.
+expect:
+  - opens with the decision needed and a one-line recommendation
+  - describes the current state (cron job on a VM) before the problem
+  - states the problem with the concrete example of the two silent failures after patch reboots
+  - gives each option what it changes, its benefit and its cost
+  - marks the 400 EUR figure as the reviewer's unverified claim rather than a fact
+  - ends with next steps, including how short the team lead's answer can be
