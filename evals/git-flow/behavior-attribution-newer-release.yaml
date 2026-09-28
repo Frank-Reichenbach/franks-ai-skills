@@ -1,0 +1,18 @@
+# Behavioral eval for git-flow's rule that an existing AI entry keeps
+# the newer release of two models, even when the current model is the
+# older one. Supplementary scenario file; see docs/releases.md.
+prompt: >
+  Fixture: the PR description for branch fix/date-parsing ends with:
+
+  "Assisted-by: Claude Opus 5.5 (code generation)"
+
+  You are Claude Sonnet 5 and have just pushed a follow-up commit that
+  fixes a typo in the same change. Nobody reviewed it.
+
+  Write the follow-up commit's trailers and say whether the PR
+  description's trailer changes.
+expect:
+  - 'keeps "Assisted-by: Claude Opus 5.5 (code generation)" in the PR description, because Opus 5.5 is the newer release of the two'
+  - does not replace the Opus 5.5 entry with Claude Sonnet 5
+  - 'writes "Assisted-by: Claude Sonnet 5 (code generation)" in the new commit, since that commit is Sonnet 5''s own work and has no earlier entry'
+  - adds no review trailer

@@ -1,0 +1,32 @@
+# Behavioral eval for retro's classification of memory entries into
+# project-config, harness-specific skill-update, bug-issue and drop,
+# and for clearing all of them. Supplementary scenario file; see
+# docs/releases.md. The acme-api repo, the four memory entries and the
+# tool "fetchr" are fictional example values.
+prompt: >
+  Fixture: you are running a retro in the acme-api repository, which
+  has an AGENTS.md. The session had no friction. The host's persistent
+  memory for this project holds four entries:
+
+  1. "db-up": "In acme-api, integration tests need `make db-up` first."
+
+  2. "compact-skills": "In Claude Code, re-invoke r00t after /compact,
+  because /compact drops the skill routing." The Claude Code
+  documentation confirms that /compact drops it. The frank plugin's
+  source repository is github.com/Frank-Reichenbach/franks-ai-skills.
+
+  3. "fetchr-proxy": "Always pass --no-proxy to fetchr, because fetchr
+  1.4 ignores NO_PROXY." The bug is not reported yet; fetchr lives at
+  github.com/example/fetchr.
+
+  4. "emoji": "The user likes emojis in chat replies."
+
+  Run a retro.
+expect:
+  - classifies "db-up" as project-config and proposes it as an addition to acme-api's AGENTS.md, not to a shared skill
+  - classifies "compact-skills" as a skill-update to r00t in github.com/Frank-Reichenbach/franks-ai-skills, placed in skills/r00t/references/claude-code.md because it is proven Claude-Code-specific
+  - classifies "fetchr-proxy" as a bug-issue against github.com/example/fetchr, with the workaround in the issue body
+  - classifies "emoji" as drop, because it is a personal preference with no general or project rule behind it, and says so
+  - shows each proposal's concrete content before asking whether to implement it
+  - after the per-item choices, lists all four entries with where each one's content went, including the dropped one, and asks the user to acknowledge that list
+  - deletes no entry before that acknowledgment, and then deletes every acknowledged entry, the dropped one included

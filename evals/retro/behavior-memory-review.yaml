@@ -1,0 +1,25 @@
+# Behavioral eval for retro's review of the host's persistent memory:
+# a rule that holds in any project becomes a general skill-update, and
+# the entry is cleared once the user acknowledges it. Supplementary
+# scenario file; see docs/releases.md. The memory entry "pr-footer",
+# the acme-api repo and Jane are fictional example values: the proposed
+# skill text must not contain them.
+prompt: >
+  Fixture: the session had no friction. The host keeps a persistent
+  memory for this project with one entry, "pr-footer": "In the acme-api
+  repo, Jane found that a tool footer after the attribution trailers
+  made git drop all trailers from the squash commit, because git reads
+  only the last paragraph as trailers. PR descriptions there now end
+  with the trailers and nothing after them." In this fixture, the frank
+  plugin's git-flow skill (source repository
+  github.com/Frank-Reichenbach/franks-ai-skills) has no rule about what
+  may follow the trailers.
+
+  Run a retro.
+expect:
+  - reviews the memory entry even though the session itself had no friction
+  - 'classifies it as a skill-update to git-flow in github.com/Frank-Reichenbach/franks-ai-skills, because the reason is how git parses trailers and holds in any project, not a preference of Jane''s or a fact about acme-api'
+  - states the rule in general form, without the acme-api repo or Jane
+  - shows the concrete proposed git-flow addition before asking whether to implement it
+  - after the per-item choice, lists the entry with where its content went and asks the user to acknowledge that list
+  - deletes the entry only after the user has acknowledged it, whether or not the skill-update was implemented

@@ -55,6 +55,18 @@ a prior "always allow" for a matching command; don't demand a fresh
 prompt for something already authorized). The wrapper does not itself
 gate this — see "Limits."
 
+## When access is missing
+
+A command that fails for lack of access — authentication
+(`Permission denied (publickey)`, an expired token), authorization, or
+an unreachable network — is a stop, not a detour. Tell the user what
+failed and what would fix it (for example `! ssh-add` to load a key),
+then wait. Don't reach the same resource another way on your own (a
+different protocol, CLI, or API): the missing access may be deliberate,
+and the detour changes what the result rests on without the user
+knowing. An alternative route the user approves holds for the rest of
+the session; don't re-ask for it.
+
 ## What the wrapper does
 
 1. **Secret-path check.** Before running anything, it checks the command

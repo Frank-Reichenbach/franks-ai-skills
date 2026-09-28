@@ -1,0 +1,12 @@
+# Behavioral eval for the git-flow/shell cooperation: git-flow decides
+# the commands, shell runs them. Supplementary scenario file; see
+# docs/releases.md.
+prompt: >
+  Fixture: the frank plugin, including shell, is installed. Your commit
+  message for branch docs/fix-readme-typo is ready.
+
+  Commit it, check the trailers, and push the branch.
+expect:
+  - runs git commit, git interpret-trailers --parse and git push through shell's wrapper script, not the host's shell tool directly
+  - pipes the commit message through git interpret-trailers --parse before pushing
+  - asks for authorization before the push, since it changes a remote, unless the host already allows it

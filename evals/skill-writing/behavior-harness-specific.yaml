@@ -1,0 +1,17 @@
+# Behavioral eval for skill-writing's rule on harness-specific content.
+# Supplementary scenario file; see docs/releases.md.
+prompt: >
+  Fixture: you are editing skills/git-flow/SKILL.md. Two additions are
+  requested: (1) Claude Code's settings documentation shows that
+  `.claude/settings.json` is its shared project settings file, and a
+  paragraph explaining how that file interacts with git-flow's rules is
+  needed; (2) a sentence saying "Codex probably handles this
+  differently", for which no documentation or test exists.
+
+  Make the additions.
+expect:
+  - puts the Claude Code paragraph in skills/git-flow/references/claude-code.md rather than in a marked section of the SKILL.md body
+  - links that file from SKILL.md with a one-line trigger naming Claude Code
+  - names the evidence (the settings documentation) next to the Claude-Code-specific content
+  - does not add the Codex sentence as harness-specific content, since it is not proven; keeps the rule generic or asks
+  - does not add a compatibility frontmatter field for this
