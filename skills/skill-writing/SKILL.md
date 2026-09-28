@@ -207,6 +207,12 @@ verifiable instead of just described.
 `evals/skill-writing/behavior-ambiguous-request.yaml` are the examples for
 this skill.
 
+A fixture has to establish every fact its expected result depends on. If
+a compliant reading of the fixture leads to a different, equally valid
+result, the eval rejects correct behavior: state the missing fact in the
+prompt, or widen the expectation. Mark invented names, repositories and
+people as fictional in the file's header comment.
+
 ## Output
 
 - **New or edited skill:** a `SKILL.md` whose body covers every element

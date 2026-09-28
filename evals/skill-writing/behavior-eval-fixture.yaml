@@ -1,0 +1,17 @@
+# Behavioral eval for skill-writing's rule that an eval fixture has to
+# establish every fact its expected result depends on. Supplementary
+# scenario file; see docs/releases.md. "deploy-check", the orders-api
+# repo and Sam are fictional example values.
+prompt: >
+  Fixture: you are reviewing a new eval for a fictional skill
+  "deploy-check", whose rule is: "Block a deploy on a Friday unless the
+  change is a hotfix." The eval's prompt says: "Sam wants to deploy
+  orders-api on Friday." Its only expectation is "blocks the deploy".
+  The header comment doesn't say that Sam or orders-api are invented.
+
+  Review the eval.
+expect:
+  - points out that the prompt doesn't say whether the change is a hotfix, so allowing the deploy is an equally valid reading
+  - proposes stating the missing fact in the prompt (for example "the change is not a hotfix") or widening the expectation
+  - asks for Sam and orders-api to be marked as fictional in the header comment
+  - names the lines or items each finding concerns
