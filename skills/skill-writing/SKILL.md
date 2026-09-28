@@ -154,6 +154,16 @@ This repo ships skill content to more than one client (Claude Code via `.claude-
 - Prefer "the agent's subagent/sub-task mechanism" over "a Claude subagent."
 - Only name Claude Code explicitly when the instruction is genuinely Claude-Code-specific (for example, a reference to `~/.claude/skills`).
 
+### Harness-specific content
+
+Generalize first. Content that applies to only one harness is allowed once it is *proven* harness-specific — a harness's documentation, its source, or a reproducible test shows the behavior; an assumption that other harnesses differ doesn't count. Name that evidence next to the content.
+
+- Put it in `references/<harness>.md` (`references/claude-code.md`, `references/codex.md`), not in marked sections of the `SKILL.md` body. The body keeps the generic rule and links the file with a one-line trigger: "In Claude Code, see `references/claude-code.md` for how to override its injected attribution."
+- A harness-specific detail of a few words that the generic rule needs to be usable (like the `${CLAUDE_PLUGIN_ROOT}` path in `shell`) stays inline, with the harness named.
+- The `compatibility` frontmatter field is for real environment requirements only (an intended product, system packages, network access). Most skills don't need it.
+
+Source: the Agent Skills specification (agentskills.io/specification: file references one level deep, domain files loaded on demand, "Most skills do not need the `compatibility` field"). OpenAI's skills documentation keeps Codex-only settings in a separate `agents/openai.yaml`.
+
 ## This repo's structure
 
 Everything above (naming, description, body content, progressive
