@@ -49,8 +49,10 @@ for anything that's changed since.
 - `shell` — runs shell commands through a wrapper with best-effort secret
   redaction and a user-authorized-only override for known secret
   locations.
-- `retro` — reviews a session and proposes skill updates, new skills, or
-  bug reports, targeting each proposal's actual source repository.
+- `retro` — reviews a session and the agent's memory, proposes skill
+  updates, new skills, project configuration changes, or bug reports,
+  targeting each proposal's actual source repository, and clears the
+  memory entries it reviewed.
 
 See `skills/skill-writing/SKILL.md` for how to add another.
 

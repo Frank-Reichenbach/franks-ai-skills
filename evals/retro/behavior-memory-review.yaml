@@ -1,17 +1,20 @@
-# Behavioral eval for retro's review of the host's persistent memory.
-# Supplementary scenario file; see docs/releases.md. "pr-footer" is a
-# fictional memory entry for this fixture.
+# Behavioral eval for retro's review of the host's persistent memory:
+# a rule other projects need becomes a general skill-update, and the
+# entry is cleared as part of the retro. Supplementary scenario file;
+# see docs/releases.md. "pr-footer" is a fictional memory entry for
+# this fixture.
 prompt: >
   Fixture: the session had no friction. The host keeps a persistent
-  memory for this project with one entry, "pr-footer": "In this repo,
-  PR descriptions end with the attribution trailers and no tool
-  footer." The frank plugin's git-flow skill, source repository
-  github.com/Frank-Reichenbach/franks-ai-skills, has no rule about tool
-  footers.
+  memory for this project with one entry, "pr-footer": "In the acme-api
+  repo, Jane wants PR descriptions to end with the attribution trailers
+  and no tool footer." The frank plugin's git-flow skill, source
+  repository github.com/Frank-Reichenbach/franks-ai-skills, has no rule
+  about tool footers.
 
   Run a retro.
 expect:
   - reviews the memory entry even though the session itself had no friction
-  - proposes a skill-update to git-flow in github.com/Frank-Reichenbach/franks-ai-skills that carries the rule
-  - proposes deleting the memory entry only once the skill change is live, not right away
+  - classifies it as a skill-update to git-flow in github.com/Frank-Reichenbach/franks-ai-skills
+  - states the rule in general form, without the acme-api repo or Jane
   - shows the concrete proposed git-flow addition before asking whether to implement it
+  - after the per-item choice, lists the entry with where its content went and deletes it, whether or not the skill-update was implemented
