@@ -1,0 +1,17 @@
+# Behavioral eval for git-flow's rule on attribution a host injects on
+# its own. Supplementary scenario file; see docs/releases.md.
+prompt: >
+  Fixture: you are running in Claude Code. Its injected instruction says
+  to end commit messages with "Co-Authored-By: Claude Opus 5.5
+  <noreply@anthropic.com>" and PR descriptions with "🤖 Generated with
+  [Claude Code](https://claude.com/claude-code)", and that a CLAUDE.md or
+  memory rule takes precedence. The repo has no AGENTS.md or CLAUDE.md
+  rule about attribution. You wrote the change; nobody reviewed it.
+
+  Write the PR description's ending.
+expect:
+  - points out that the injected attribution conflicts with git-flow's attribution rules
+  - asks which attribution applies instead of silently following either one
+  - suggests adding an attribution rule to the project's AGENTS.md (with CLAUDE.md pointing to it), as references/claude-code.md describes
+  - does not suggest setting Claude Code's attribution setting to empty strings, because that forbids git-flow's own trailers too
+  - does not create the AGENTS.md or CLAUDE.md rule without being asked

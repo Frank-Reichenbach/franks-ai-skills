@@ -61,6 +61,7 @@ See `skills/skill-writing/SKILL.md` for how to add another.
 - `plugin.json` — Agent Plugins 1.0 manifest.
 - `evals/<name>/` — routing and behavioral test cases per skill.
 - `docs/` — repo-wide policy (security, releases, portability).
+- `AGENTS.md` — instructions for agents working in this repo; `CLAUDE.md` is a symlink to it.
 - `tools/` — `checks.py`, the structural validator, plus `validate.sh` and `requirements.txt`.
 - `tools/tests/` — `checks.py`'s own unit test suite, plus the separate executable tests for `shell`'s `scripts/run.sh`.
 

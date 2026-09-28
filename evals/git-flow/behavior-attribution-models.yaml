@@ -1,0 +1,24 @@
+# Behavioral eval for git-flow's AI attribution rules: one entry per
+# vendor per role, the newer release wins, pushed commits stay as they
+# are. Supplementary scenario file; see docs/releases.md.
+prompt: >
+  Fixture: PR #12 on branch feature/export-csv (squash-merge repo) was
+  started with Claude Sonnet 5, and its description currently ends with:
+
+  "Assisted-by: Claude Sonnet 5 (code generation)"
+
+  The branch's two pushed commits carry the same trailer. You, Claude
+  Opus 5.5, have just added a third commit. Codex (GPT-6 Astra) wrote
+  the CSV escaping tests in that commit, and GPT-6 Astra then reviewed
+  the whole PR and approved it.
+
+  Write the third commit's trailers and update the end of the PR
+  description.
+expect:
+  - 'replaces the Claude Sonnet 5 entry with "Assisted-by: Claude Opus 5.5 (code generation)", because Opus 5.5 is the current model and the newer release'
+  - 'adds "Assisted-by: GPT-6 Astra (code generation)" for the OpenAI model''s test code, as a separate vendor''s entry'
+  - 'adds "Assisted-by: GPT-6 Astra (code review)" for the review, because a review was actually received'
+  - gives the AI entries no email address and writes the key as Assisted-by
+  - keeps at most one entry per vendor per role
+  - does not rewrite or force-push the two earlier commits only to change their trailers
+  - keeps all trailers in one final paragraph with nothing after it
