@@ -30,7 +30,12 @@ the same as any other technical writing.
    gaps (something that should exist as a skill but doesn't). Extract
    findings, don't reproduce: pull out the specific friction/gap signals
    into findings — don't quote large stretches of the transcript
-   verbatim into the proposal output.
+   verbatim into the proposal output. If the host keeps a persistent
+   memory for the agent, review its entries for this project too: an
+   entry that states a rule other sessions need belongs in a skill or
+   in the project's own configuration. Propose that change, and
+   propose deleting the entry once the change is live — not before, or
+   the rule is lost in between.
 2. **Classify each finding into one of three buckets:**
    - **skill-update** — an existing skill's `SKILL.md` (or a reference
      file it points to) should change.

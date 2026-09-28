@@ -1,0 +1,17 @@
+# Behavioral eval for retro's review of the host's persistent memory.
+# Supplementary scenario file; see docs/releases.md. "pr-footer" is a
+# fictional memory entry for this fixture.
+prompt: >
+  Fixture: the session had no friction. The host keeps a persistent
+  memory for this project with one entry, "pr-footer": "In this repo,
+  PR descriptions end with the attribution trailers and no tool
+  footer." The frank plugin's git-flow skill, source repository
+  github.com/Frank-Reichenbach/franks-ai-skills, has no rule about tool
+  footers.
+
+  Run a retro.
+expect:
+  - reviews the memory entry even though the session itself had no friction
+  - proposes a skill-update to git-flow in github.com/Frank-Reichenbach/franks-ai-skills that carries the rule
+  - proposes deleting the memory entry only once the skill change is live, not right away
+  - shows the concrete proposed git-flow addition before asking whether to implement it
