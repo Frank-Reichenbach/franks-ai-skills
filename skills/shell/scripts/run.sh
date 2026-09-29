@@ -103,21 +103,105 @@ if [[ "$allow_secret_path" -eq 0 ]] && matched_label=$(secret_path_label "$cmd")
 fi
 
 # Matches complete values, including quoted ones and base64-shaped ones
-# (+, /, = are common in tokens) — anything up to the next quote,
-# whitespace, or semicolon, not just "word" characters. Best-effort: an
-# unusual format can still slip past.
+# (+, /, = are common in tokens), not just "word" characters.
+# Best-effort: an unusual format can still slip past.
+#
+# A key= or token= value (api_key= included) is the whole shell word
+# after the =, as bash reads it: unquoted characters, backslash escapes,
+# and "…", '…' and $'…' fragments, so a quoted value with spaces, \" or
+# '\'' in it is masked as a whole. A value of fewer than 8 characters,
+# counted as written with its quotes, stays readable. A value that ends
+# its line inside an open quote, or with a backslash, continues on the
+# next line: the rest of the line is masked, and so is the next line up
+# to the closing quote or the end of the word. If the input ends first,
+# everything after the opening quote stays masked. The hold space
+# carries the open state from one line to the next: D ("), S ('),
+# A ($'), C (backslash) or N (none).
+#
+# sed marks a value while it works on it (@RUNSH_…@); markers already in
+# the input are neutralized first, so they can't unmask a value, and
+# show as @RUNSH-… in the output.
+q="'"
+# One fragment of a shell word; a quote left open to the end of the
+# line; the rest of a quote opened on an earlier line.
+dq='"([^"\\]|\\.)*"'
+sq="$q[^$q]*$q"
+aq='\$'"$q"'([^'"$q"'\\]|\\.)*'"$q"
+frag="($dq|$sq|$aq|"'\\.|[^"'"$q"'[:space:];\\])'
+dq_open='"([^"\\]|\\.)*\\?$'
+sq_open="$q[^$q]*\$"
+aq_open='\$'"$q"'([^'"$q"'\\]|\\.)*\\?$'
+bs_open='\\$'
+dq_close='([^"\\]|\\.)*"'
+sq_close="[^$q]*$q"
+aq_close='([^'"$q"'\\]|\\.)*'"$q"
+name='([Kk][Ee][Yy]|[Tt][Oo][Kk][Ee][Nn])'
+
+redact_script=
+add() { redact_script+="$1"$'\n'; }
+# A value matched by $1 that continues on the next line: replace it with
+# $2 and tag the line with the state the next line starts in.
+continues() {
+  add "s/$1$dq_open/$2@RUNSH_QD@/"
+  add "s/$1$sq_open/$2@RUNSH_QS@/"
+  add "s/$1$aq_open/$2@RUNSH_QA@/"
+  add "s/$1$bs_open/$2@RUNSH_QC@/"
+}
+
+add 's/@RUNSH_/@RUNSH-/g'
+# Prefix the line with the state the previous line left.
+add 'x'
+add 'G'
+# A line that starts inside a value: mask up to where the value ends.
+for state in D S A C; do
+  case $state in
+    D) close=$dq_close ;;
+    S) close=$sq_close ;;
+    A) close=$aq_close ;;
+    C) close= ;;
+  esac
+  continues "^$state\\n$close$frag*" '[REDACTED]'
+  add "s/^$state\\n$close$frag*/[REDACTED]/"
+  [ "$state" = C ] || add "s/^$state\\n.*/[REDACTED]@RUNSH_Q$state@/"
+done
+add 's/^N?\n//'
+# Mask one complete value at a time, leftmost first, so a name inside a
+# value never counts as a name of its own. The = is marked on each
+# value handled, so the loop ends.
+add ':loop'
+add 't loopreset'
+add ':loopreset'
+add "s/$name=($frag+)/\\1@RUNSH_A@\\2@RUNSH_B@/"
+add 't mark'
+add 'b done'
+add ':mark'
+continues '@RUNSH_A@.*@RUNSH_B@' '@RUNSH_M@=[REDACTED]'
+add 's/@RUNSH_A@.{8,}@RUNSH_B@/@RUNSH_M@=[REDACTED]/'
+add 's/@RUNSH_A@(.*)@RUNSH_B@/@RUNSH_S@=\1/'
+add 'b loop'
+add ':done'
+# A value that opens a quote or ends in a backslash right after the =.
+continues "$name=$frag*" '\1@RUNSH_M@=[REDACTED]'
+add "s/[Bb]earer[[:space:]]+[\"']?[^\"'[:space:];]{8,}[\"']?/Bearer [REDACTED]/g"
+add "s/sk-[^\"'[:space:];]{5,}/[REDACTED]/g"
+add 's/@RUNSH_[MS]@=/=/g'
+# Move the line's state tag into the hold space, N if it has none.
+add 't statereset'
+add ':statereset'
+add 'h'
+add 's/.*@RUNSH_Q(.)@$/\1/'
+add 't state'
+add 's/.*/N/'
+add ':state'
+add 'x'
+add 's/@RUNSH_Q.@$//'
+
 redact() {
   # sed's own error text (e.g. "illegal byte sequence" on invalid bytes
   # under the current locale) is suppressed here — the caller checks this
   # function's exit status and prints its own clear, attributed notice
   # instead of leaking sed's raw, unattributed error line.
-  sed -E \
-    -e "s/[Bb]earer[[:space:]]+[\"']?[^\"'[:space:];]{8,}[\"']?/Bearer [REDACTED]/g" \
-    -e "s/sk-[^\"'[:space:];]{5,}/[REDACTED]/g" \
-    -e "s/([Aa][Pp][Ii][_-]?[Kk][Ee][Yy]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
-    -e "s/([Tt][Oo][Kk][Ee][Nn]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
-    -e "s/([Kk][Ee][Yy]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
-    2>/dev/null
+  sed -E -e "$redact_script" 2>/dev/null
 }
 
 printf '$ %s\n' "$cmd" | redact

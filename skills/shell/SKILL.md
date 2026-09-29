@@ -95,7 +95,12 @@ the session; don't re-ask for it.
 3. **Redacted echo.** Once past the check, it prints the command it's
    about to run, with secret-shaped substrings (bearer tokens, `sk-`
    style API keys, `key=`/`token=` values) masked in that echo — not
-   just in the output.
+   just in the output. A `key=`/`token=` value is the whole shell word
+   after the `=`, quotes included, so a quoted value with spaces, `\"`
+   or `'\''` in it is masked as a whole, and one that continues onto
+   later lines (an open quote, a trailing backslash) stays masked up to
+   where it ends. Values of fewer than 8 characters, counted as written,
+   stay readable.
 4. **Execution.** Runs the command via `bash -c`, preserving quoting and
    the real exit status.
 5. **Redacted, bounded output.** stdout and stderr are captured
@@ -131,7 +136,11 @@ the session; don't re-ask for it.
   stdout/stderr, including output printed by a script the command calls
   — but it's still pattern matching, not comprehension, and can be
   fooled by a value shaped differently than the patterns expect, or miss
-  a secret a called script reads but never prints.
+  a secret a called script reads but never prints. Names other than
+  `key=`/`token=`, such as `password=` or `secret=`, aren't masked at
+  all. And it reads every line as shell: in other text, such as source
+  code with `KEY=…"` inside a string, a quote it takes as open masks the
+  following lines up to the next matching quote.
 - Masking the wrapper's *echoed* command does not remove a secret
   already present in the actual tool-call arguments the host recorded —
   by the time the wrapper runs, the agent already had to type the full

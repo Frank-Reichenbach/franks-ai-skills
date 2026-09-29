@@ -320,6 +320,84 @@ class RedactionTests(unittest.TestCase):
         self.assertNotIn("abcd1234efgh5678", result.stdout)
         self.assertIn("REDACTED", result.stdout)
 
+    def cat_through_wrapper(self, text):
+        # Prints text through the wrapper on stdout and on stderr, from a
+        # file, so bash doesn't interpret the quotes in it.
+        with tempfile.TemporaryDirectory() as tmp:
+            f = Path(tmp) / "input.txt"
+            f.write_text(text)
+            return (
+                run_wrapper([f"cat {f}"]).stdout,
+                run_wrapper([f"cat {f} >&2"]).stderr,
+            )
+
+    def test_quoted_values_are_redacted_completely(self):
+        # (input, fragments of the secret that must not appear)
+        cases = (
+            ('API_KEY="abcd1234 efgh5678"\n', ("abcd1234", "efgh5678")),
+            ('SECRET_KEY="correct horse battery staple"\n', ("correct", "horse", "staple")),
+            ('KEY="abcd\\"efgh ijkl"\n', ("abcd", "efgh", "ijkl")),
+            ("TOKEN=$'abcd1234efgh 5678'\n", ("abcd1234efgh", "5678")),
+            ("KEY='abcd'\\''efgh ijkl'\n", ("abcd", "efgh", "ijkl")),
+            # Text inside a value that looks like a setting doesn't end it.
+            ('SECRET_KEY="pass trailer.foo.key=lettersonlysecret"\n', ("pass", "lettersonlysecret")),
+            # A value spanning lines, and one the input ends inside.
+            ('KEY="abcd1234\nefgh5678\nijkl"\n', ("abcd1234", "efgh5678", "ijkl")),
+            ("TOKEN='abcd1234\nefgh5678\n", ("abcd1234", "efgh5678")),
+            ('KEY="abcd1234\nefgh5678"\'ijkl\nmnop\'\n', ("efgh5678", "ijkl", "mnop")),
+            # A name inside an open value doesn't end it either.
+            ('KEY="abcd token=efgh5678\nijkl"\n', ("abcd", "efgh5678", "ijkl")),
+            # A quote opened after an unquoted part continues the value,
+            # and so does a backslash at the end of the line.
+            ('KEY=abcd1234"efgh\nijkl"\n', ("efgh", "ijkl")),
+            ("KEY=abcd1234\\\nefgh5678\n", ("abcd1234", "efgh5678")),
+            ("TOKEN=\\\nefgh5678\n", ("efgh5678",)),
+            ('KEY="abcd1234\nefgh5678"\\\nijkl\n', ("efgh5678", "ijkl")),
+        )
+        for text, fragments in cases:
+            with self.subTest(text=text):
+                for stream in self.cat_through_wrapper(text):
+                    for fragment in fragments:
+                        self.assertNotIn(fragment, stream)
+                    self.assertIn("REDACTED", stream)
+
+    def test_text_around_quoted_values_stays_readable(self):
+        cases = (
+            # Short values stay readable, as before (8-character minimum,
+            # counted over the value as written, quotes included).
+            ("key=abc\n", "key=abc"),
+            ('KEY="ab"\n', 'KEY="ab"'),
+            # Text after a value's closing quote is not part of it.
+            ('KEY="abcd1234\nefgh5678" && echo visible\n', "&& echo visible"),
+            ('KEY="abcd1234 efgh5678"\nnext line\n', "next line"),
+            # A name inside a closed value doesn't open a quote.
+            ('KEY="pass key=abcd1234efgh"\nnext line\n', "next line"),
+            ("KEY=abcd1234\\\nefgh5678 visible\n", " visible"),
+            # A quote outside a secret assignment starts nothing.
+            ('say "open\nplain text\n', "plain text"),
+        )
+        for text, visible in cases:
+            with self.subTest(text=text):
+                for stream in self.cat_through_wrapper(text):
+                    self.assertIn(visible, stream)
+
+    def test_quoted_value_in_command_echo_is_redacted(self):
+        for cmd in (
+            'export API_KEY="abcd1234 efgh5678"; echo done',
+            'export KEY="abcd1234\nefgh5678"; echo done',
+        ):
+            with self.subTest(cmd=cmd):
+                result = run_wrapper([cmd])
+                self.assertNotIn("abcd1234", result.stdout)
+                self.assertNotIn("efgh5678", result.stdout)
+                self.assertIn("done", result.stdout)
+
+    def test_marker_in_input_does_not_unmask(self):
+        # redact() marks values while it works on them; input that
+        # already contains a marker must not come out as key=<secret>.
+        stdout, _ = self.cat_through_wrapper("key@RUNSH_S@=abcd1234efgh5678\n")
+        self.assertNotIn("key=abcd1234efgh5678", stdout)
+
     def test_quoted_value_is_fully_redacted(self):
         with tempfile.TemporaryDirectory() as tmp:
             f = Path(tmp) / "quoted.txt"
