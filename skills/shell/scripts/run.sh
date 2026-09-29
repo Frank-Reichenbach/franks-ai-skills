@@ -108,9 +108,12 @@ fi
 # unusual format can still slip past.
 #
 # The bare key= rule exempts only names that denote a public value by
-# definition: git's trailer.<name>.key (a trailer key name), signingkey
-# (git's user.signingKey, a key ID or path) and public_key/publickey/
-# pubkey. Every other key= name stays masked, whatever its value looks
+# definition: git's trailer.<name>.key (a trailer key name) and
+# user.signingKey (a key ID or path), and public_key/publickey/pubkey.
+# A bare signingkey stays masked: an application's signing key can be an
+# HMAC secret. Each exempt name must be the complete name, so the
+# character before it can't be a name character (notpublic_key= stays
+# masked). Every other key= name stays masked, whatever its value looks
 # like. POSIX ERE has no lookbehind, so an exempt name is marked before
 # the key= rule runs and unmarked after it; a marker already present in
 # the input is neutralized first, so it can't unmask a key=<secret>.
@@ -125,9 +128,9 @@ redact() {
     -e "s/([Aa][Pp][Ii][_-]?[Kk][Ee][Yy]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
     -e "s/([Tt][Oo][Kk][Ee][Nn]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
     -e "s/@RUNSH_KEEP@/@RUNSH-KEEP@/g" \
-    -e "s/([Tt][Rr][Aa][Ii][Ll][Ee][Rr]\.[^.[:space:]\"'=]+\.[Kk][Ee][Yy])=/\1@RUNSH_KEEP@=/g" \
-    -e "s/([Ss][Ii][Gg][Nn][Ii][Nn][Gg][Kk][Ee][Yy])=/\1@RUNSH_KEEP@=/g" \
-    -e "s/([Pp][Uu][Bb]([Ll][Ii][Cc])?[_-]?[Kk][Ee][Yy])=/\1@RUNSH_KEEP@=/g" \
+    -e "s/(^|[^A-Za-z0-9_.-])([Tt][Rr][Aa][Ii][Ll][Ee][Rr]\.[^.[:space:]\"'=]+\.[Kk][Ee][Yy])=/\1\2@RUNSH_KEEP@=/g" \
+    -e "s/(^|[^A-Za-z0-9_.-])([Uu][Ss][Ee][Rr]\.[Ss][Ii][Gg][Nn][Ii][Nn][Gg][Kk][Ee][Yy])=/\1\2@RUNSH_KEEP@=/g" \
+    -e "s/(^|[^A-Za-z0-9_.-])([Pp][Uu][Bb]([Ll][Ii][Cc])?[_-]?[Kk][Ee][Yy])=/\1\2@RUNSH_KEEP@=/g" \
     -e "s/([Kk][Ee][Yy]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
     -e "s/@RUNSH_KEEP@=/=/g" \
     2>/dev/null

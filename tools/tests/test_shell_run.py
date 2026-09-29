@@ -330,7 +330,7 @@ class RedactionTests(unittest.TestCase):
     def test_public_key_names_are_readable(self):
         for line in (
             "user.signingkey=ABCDEF1234567890",
-            "user.signingKey=ABCDEF1234567890",
+            "git -c user.signingKey=ABCDEF1234567890 commit",
             "public_key=ABCDEF1234567890",
             "PUBLICKEY=ABCDEF1234567890",
             "pubkey=ABCDEF1234567890",
@@ -348,6 +348,15 @@ class RedactionTests(unittest.TestCase):
             "SECRET_KEY=lettersonlysecret",
             "private_key=abcd1234efgh5678",
             "trailer.assisted-by.key=Assisted-by key=abcd1234efgh5678",
+            # signingkey is public only as git's user.signingKey; an
+            # application's signing key can be an HMAC secret.
+            "signingkey=lettersonlysecret",
+            "SigningKey=lettersonlysecret",
+            "jwt.signingkey=lettersonlysecret",
+            # An exempt name must be the complete name, not a suffix.
+            "myuser.signingkey=lettersonlysecret",
+            "notpublic_key=lettersonlysecret",
+            "private_trailer.assisted-by.key=lettersonlysecret",
         ):
             with self.subTest(line=line):
                 result = run_wrapper([f"echo {line}"])
