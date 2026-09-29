@@ -328,22 +328,39 @@ class RedactionTests(unittest.TestCase):
         self.assertNotIn("REDACTED", result.stdout)
 
     def test_public_key_names_are_readable(self):
+        # printf with a single-quoted argument, so bash neither expands
+        # `$` nor splits at `;` before the wrapper sees the line. The
+        # line appears twice: in the echoed command and in the output.
         for line in (
             "user.signingkey=ABCDEF1234567890",
             "git -c user.signingKey=ABCDEF1234567890 commit",
-            "public_key=ABCDEF1234567890",
+            'git -c "trailer.assisted-by.key=Assisted-by" log',
+            "a\tpublic_key=ABCDEF1234567890",
             "PUBLICKEY=ABCDEF1234567890",
             "pubkey=ABCDEF1234567890",
         ):
             with self.subTest(line=line):
-                result = run_wrapper([f"echo {line}"])
-                self.assertIn(line, result.stdout)
+                result = run_wrapper([f"printf '%s\\n' '{line}'"])
+                self.assertEqual(result.stdout.count(line), 2)
                 self.assertNotIn("REDACTED", result.stdout)
 
     def test_other_key_names_stay_redacted(self):
         # Neither a dotted name nor a letters-only value exempts a key:
         # only the names in the allowlist do.
         for line in (
+            # Only the start of the line, a blank or a quote may precede
+            # an exempt name: anything else, including non-ASCII
+            # identifier characters and `$`, may be part of a longer name.
+            "secretλpublic_key=lettersonlysecret",
+            "private$public_key=lettersonlysecret",
+            "αuser.signingKey=lettersonlysecret",
+            "私trailer.foo.key=lettersonlysecret",
+            "https://example.invalid/?x=1&public_key=lettersonlysecret",
+            # A trailer name is letters, digits and hyphens, so the
+            # exemption can't cross a delimiter into another field.
+            "https://example.invalid/trailer.foo?auth.key=lettersonlysecret",
+            "trailer.foo;private.key=lettersonlysecret",
+            "trailer.foo,private.key=lettersonlysecret",
             "helm install x --set auth.key=abcd1234efgh5678",
             "SECRET_KEY=lettersonlysecret",
             "private_key=abcd1234efgh5678",
@@ -359,10 +376,11 @@ class RedactionTests(unittest.TestCase):
             "private_trailer.assisted-by.key=lettersonlysecret",
         ):
             with self.subTest(line=line):
-                result = run_wrapper([f"echo {line}"])
-                self.assertNotIn("abcd1234efgh5678", result.stdout)
-                self.assertNotIn("lettersonlysecret", result.stdout)
-                self.assertIn("REDACTED", result.stdout)
+                result = run_wrapper([f"printf '%s\\n' '{line}' >&2"])
+                for stream in (result.stdout, result.stderr):
+                    self.assertNotIn("abcd1234efgh5678", stream)
+                    self.assertNotIn("lettersonlysecret", stream)
+                    self.assertIn("REDACTED", stream)
 
     def test_allowlist_marker_in_input_does_not_unmask(self):
         # The allowlist protects a name by marking it before the key=

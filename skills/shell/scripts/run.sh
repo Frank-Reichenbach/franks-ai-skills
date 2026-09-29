@@ -111,10 +111,14 @@ fi
 # definition: git's trailer.<name>.key (a trailer key name) and
 # user.signingKey (a key ID or path), and public_key/publickey/pubkey.
 # A bare signingkey stays masked: an application's signing key can be an
-# HMAC secret. Each exempt name must be the complete name, so the
-# character before it can't be a name character (notpublic_key= stays
-# masked). Every other key= name stays masked, whatever its value looks
-# like. POSIX ERE has no lookbehind, so an exempt name is marked before
+# HMAC secret. Each exempt name must be the complete name: only the start
+# of the line, a blank or a quote may precede it. A list of what may
+# precede it, not of what may not, because any other character can be
+# part of a longer name (notpublic_key=, secretλpublic_key=,
+# private$public_key= stay masked). A trailer <name> is letters, digits
+# and hyphens, so the exemption can't cross a delimiter into another
+# field (trailer.foo?auth.key= stays masked). Every other key= name
+# stays masked, whatever its value looks like. POSIX ERE has no lookbehind, so an exempt name is marked before
 # the key= rule runs and unmarked after it; a marker already present in
 # the input is neutralized first, so it can't unmask a key=<secret>.
 redact() {
@@ -128,9 +132,9 @@ redact() {
     -e "s/([Aa][Pp][Ii][_-]?[Kk][Ee][Yy]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
     -e "s/([Tt][Oo][Kk][Ee][Nn]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
     -e "s/@RUNSH_KEEP@/@RUNSH-KEEP@/g" \
-    -e "s/(^|[^A-Za-z0-9_.-])([Tt][Rr][Aa][Ii][Ll][Ee][Rr]\.[^.[:space:]\"'=]+\.[Kk][Ee][Yy])=/\1\2@RUNSH_KEEP@=/g" \
-    -e "s/(^|[^A-Za-z0-9_.-])([Uu][Ss][Ee][Rr]\.[Ss][Ii][Gg][Nn][Ii][Nn][Gg][Kk][Ee][Yy])=/\1\2@RUNSH_KEEP@=/g" \
-    -e "s/(^|[^A-Za-z0-9_.-])([Pp][Uu][Bb]([Ll][Ii][Cc])?[_-]?[Kk][Ee][Yy])=/\1\2@RUNSH_KEEP@=/g" \
+    -e "s/(^|[[:blank:]\"'])([Tt][Rr][Aa][Ii][Ll][Ee][Rr]\.[A-Za-z0-9-]+\.[Kk][Ee][Yy])=/\1\2@RUNSH_KEEP@=/g" \
+    -e "s/(^|[[:blank:]\"'])([Uu][Ss][Ee][Rr]\.[Ss][Ii][Gg][Nn][Ii][Nn][Gg][Kk][Ee][Yy])=/\1\2@RUNSH_KEEP@=/g" \
+    -e "s/(^|[[:blank:]\"'])([Pp][Uu][Bb]([Ll][Ii][Cc])?[_-]?[Kk][Ee][Yy])=/\1\2@RUNSH_KEEP@=/g" \
     -e "s/([Kk][Ee][Yy]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
     -e "s/@RUNSH_KEEP@=/=/g" \
     2>/dev/null

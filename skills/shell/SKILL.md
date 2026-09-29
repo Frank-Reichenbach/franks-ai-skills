@@ -98,9 +98,11 @@ the session; don't re-ask for it.
    just in the output. `key=` and `token=` values shorter than 8
    characters stay readable. A longer `key=` value stays readable only
    under a complete name that denotes a public value: git's
-   `trailer.<name>.key` and `user.signingKey`, and
-   `public_key`/`publickey`/`pubkey`. Every other `key=` value of 8 or
-   more characters is masked, whatever it looks like.
+   `trailer.<name>.key` (`<name>` of letters, digits and hyphens) and
+   `user.signingKey`, and `public_key`/`publickey`/`pubkey`, each
+   preceded by the start of the line, a blank or a quote. Every other
+   `key=` value of 8 or more characters is masked, whatever it looks
+   like.
 4. **Execution.** Runs the command via `bash -c`, preserving quoting and
    the real exit status.
 5. **Redacted, bounded output.** stdout and stderr are captured
