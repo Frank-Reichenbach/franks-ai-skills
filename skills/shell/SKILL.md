@@ -95,7 +95,16 @@ the session; don't re-ask for it.
 3. **Redacted echo.** Once past the check, it prints the command it's
    about to run, with secret-shaped substrings (bearer tokens, `sk-`
    style API keys, `key=`/`token=` values) masked in that echo — not
-   just in the output.
+   just in the output. `key=` and `token=` values shorter than 8
+   characters stay readable. A longer `key=` value stays readable only
+   under a complete name that denotes a public value: git's
+   `trailer.<name>.key` (`<name>` of letters, digits and hyphens) and
+   `user.signingKey`, and `public_key`/`publickey`/`pubkey`, each
+   starting a word: after the start of a line or a blank, optionally
+   through an opening quote. A quote inside a word, or a line after one
+   ending in `\`, continues the word before it, so the value stays
+   masked. Every other `key=` value of 8 or more characters is masked,
+   whatever it looks like.
 4. **Execution.** Runs the command via `bash -c`, preserving quoting and
    the real exit status.
 5. **Redacted, bounded output.** stdout and stderr are captured

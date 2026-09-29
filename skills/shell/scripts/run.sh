@@ -106,17 +106,54 @@ fi
 # (+, /, = are common in tokens) — anything up to the next quote,
 # whitespace, or semicolon, not just "word" characters. Best-effort: an
 # unusual format can still slip past.
+#
+# The bare key= rule exempts only names that denote a public value by
+# definition: git's trailer.<name>.key (a trailer key name) and
+# user.signingKey (a key ID or path), and public_key/publickey/pubkey.
+# A bare signingkey stays masked: an application's signing key can be an
+# HMAC secret. Each exempt name must start a word: it follows the start
+# of a line or a blank, optionally through one opening quote. A list of
+# what may precede it, not of what may not, because any other character
+# can be part of a longer name (notpublic_key=, secretλpublic_key=,
+# private$public_key= stay masked). A quote after anything else, and the
+# start of a line after one ending in a backslash, continue the word
+# before them: bash reads private"public_key=…" and private\<newline>
+# public_key=… as privatepublic_key, so both stay masked. A trailer
+# <name> is letters, digits and hyphens, so the exemption can't cross a
+# delimiter into another field (trailer.foo?auth.key= stays masked).
+# Every other key= name stays masked, whatever its value looks like.
+#
+# POSIX ERE has no lookbehind, so an exempt name is marked before the
+# key= rule runs and unmarked after it, and a line continuing the one
+# before it gets a prefix so that its start doesn't count as a word
+# start. The hold space carries that flag from one line to the next:
+# C if the line ended in a backslash, N otherwise. Markers already
+# present in the input are neutralized first, so they can't unmask a
+# key=<secret>.
 redact() {
   # sed's own error text (e.g. "illegal byte sequence" on invalid bytes
   # under the current locale) is suppressed here — the caller checks this
   # function's exit status and prints its own clear, attributed notice
   # instead of leaking sed's raw, unattributed error line.
   sed -E \
+    -e 's/@RUNSH_/@RUNSH-/g' \
+    -e 'x' -e 'G' \
+    -e 's/^C\n/@RUNSH_CONT@/' \
+    -e 's/^[CN]?\n//' \
+    -e 'h' \
+    -e 't reset' -e ':reset' \
+    -e 's/.*\\$/C/' -e 't flagged' -e 's/.*/N/' -e ':flagged' \
+    -e 'x' \
     -e "s/[Bb]earer[[:space:]]+[\"']?[^\"'[:space:];]{8,}[\"']?/Bearer [REDACTED]/g" \
     -e "s/sk-[^\"'[:space:];]{5,}/[REDACTED]/g" \
     -e "s/([Aa][Pp][Ii][_-]?[Kk][Ee][Yy]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
     -e "s/([Tt][Oo][Kk][Ee][Nn]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
+    -e "s/(^|[[:blank:]])([\"']?[Tt][Rr][Aa][Ii][Ll][Ee][Rr]\.[A-Za-z0-9-]+\.[Kk][Ee][Yy])=/\1\2@RUNSH_KEEP@=/g" \
+    -e "s/(^|[[:blank:]])([\"']?[Uu][Ss][Ee][Rr]\.[Ss][Ii][Gg][Nn][Ii][Nn][Gg][Kk][Ee][Yy])=/\1\2@RUNSH_KEEP@=/g" \
+    -e "s/(^|[[:blank:]])([\"']?[Pp][Uu][Bb]([Ll][Ii][Cc])?[_-]?[Kk][Ee][Yy])=/\1\2@RUNSH_KEEP@=/g" \
     -e "s/([Kk][Ee][Yy]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
+    -e 's/@RUNSH_KEEP@=/=/g' \
+    -e 's/^@RUNSH_CONT@//' \
     2>/dev/null
 }
 
