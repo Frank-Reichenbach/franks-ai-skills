@@ -416,11 +416,25 @@ class RedactionTests(unittest.TestCase):
         self.assertLess(time.monotonic() - start, 5)
         self.assertNotIn("abcdefgh", stdout)
 
+    def test_long_value_takes_linear_time(self):
+        # Regression: reading a value with substr() one byte at a time
+        # made BSD awk's time grow with the square of the line length:
+        # a 512 KB value took 5 s.
+        import time
+
+        start = time.monotonic()
+        stdout, _ = self.cat_through_wrapper('KEY="' + "a b " * 256 * 1024 + '"\n')
+        self.assertLess(time.monotonic() - start, 5)
+        self.assertIn("KEY=[REDACTED]", stdout)
+        self.assertNotIn("a b", stdout)
+
     def test_line_continuations_are_joined_as_bash_joins_them(self):
         # Bash removes a backslash-newline before it reads names, quotes
         # and $'…', so each of these is one assignment.
         cases = (
             ("TOKEN=$\\\n'abcdefgh\\' LEAKTAIL\nlast'\n", ("abcdefgh", "LEAKTAIL", "last")),
+            # The same on a line over 1 KB, which is read from an array.
+            ("TOKEN=" + "x" * 1100 + "$\\\n'abcdefgh\\' LEAKTAIL\nlast'\n", ("xxxx", "LEAKTAIL", "last")),
             ('KEY=$\\\n"abcd efgh"\n', ("abcd", "efgh")),
             ("export API_KE\\\nY=lettersonlysecret1\n", ("lettersonlysecret1",)),
             ("AP\\\nI_K\\\nEY=lettersonlysecret1\n", ("lettersonlysecret1",)),

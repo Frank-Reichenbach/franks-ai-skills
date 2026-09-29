@@ -98,17 +98,18 @@ function named(p,    s) {
 # continues onto the next line, it returns len + 1 and sets st to the
 # state the next line starts in; otherwise it clears st.
 function value(i,    q, c) {
+    split_line()
     q = (st == "" ? "U" : st)
     st = ""
     if (q == "P") {
-        c = substr(line, i, 1)
+        c = at(i)
         if (c == "'") { q = "A"; i++ }
         else if (c == "\"") { q = "D"; i++ }
         else if (c == "\\" && i == len) { st = "P"; return len + 1 }
         else q = "U"
     }
     while (i <= len) {
-        c = substr(line, i, 1)
+        c = at(i)
         if (q == "U") {
             if (c == " " || c == "\t" || c == ";" || c == "\r" || c == "\v" || c == "\f") return i
             if (c == "\\") {
@@ -119,7 +120,7 @@ function value(i,    q, c) {
             if (c == "\"") q = "D"
             else if (c == "'") q = "S"
             else if (c == "$") {
-                c = substr(line, i + 1, 1)
+                c = at(i + 1)
                 if (c == "'") { q = "A"; i++ }
                 else if (c == "\"") { q = "D"; i++ }
                 else if (c == "\\" && i + 1 == len) { st = "P"; return len + 1 }
@@ -138,6 +139,23 @@ function value(i,    q, c) {
     }
     if (q != "U") st = q
     return len + 1
+}
+
+# The byte at position i of the line. BSD awk's substr() takes longer
+# the longer the line, so reading a long value one byte at a time with
+# it took time growing with the square of its length. A line over 1 KB
+# is split into bytes once instead; on a shorter one, substr() is
+# faster than the split. POSIX leaves split() with an empty separator
+# unspecified: if it doesn't yield one element per byte, substr() is
+# used after all.
+function at(i) {
+    return (nch == len ? ch[i] : substr(line, i, 1))
+}
+
+function split_line() {
+    if (split_nr == NR) return
+    split_nr = NR
+    nch = (len > 1024 ? split(line, ch, "") : -1)
 }
 
 # Prints a value, masked unless it is shorter than 8 bytes and doesn't
