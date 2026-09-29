@@ -1,15 +1,16 @@
 ---
 name: git-flow
-description: "Establishes default branching, commit message, and pull-request conventions for a project that doesn't already have its own: Conventional Commits, feature/fix/chore/docs branch prefixes, PR-before-merge, squash-merge by default, what a PR description has to cover, and attribution trailers for AI models and people. Merging always requires an explicit request or human approval, never automatic just because CI is green. Use when starting feature work, committing, or opening or merging a pull request."
+description: "Establishes default branching, commit message, and pull-request conventions for a project that doesn't already have its own: Conventional Commits, feature/fix/chore/docs branch prefixes, PR-before-merge, squash-merge by default, what a PR description has to cover, and attribution trailers for AI models and people. Merging always requires an explicit request or human approval, never automatic just because CI is green, and an issue is created only after its text is approved. Use when starting feature work, committing, opening or merging a pull request, or creating an issue."
 ---
 
 # Git Flow
 
 ## Scope
 
-Governs the mechanics of branching, committing, and merging: when to
-branch, how to name it, commit message format, when to open a PR, when
-(and whether) to merge it. These are defaults for a project that doesn't
+Governs the mechanics of branching, committing, merging, and creating
+issues: when to branch, how to name it, commit message format, when to
+open a PR, when (and whether) to merge it, and when an issue may be
+created. These are defaults for a project that doesn't
 already have its own established conventions — an existing project's own
 git conventions always take precedence.
 
@@ -184,6 +185,18 @@ commits written on the branch. A commit body is hard-wrapped, so join
 its paragraphs before reusing it as a PR description, keeping its
 trailers as the final block.
 
+## Issues
+
+- **Creating an issue requires approval of its text.** Before creating
+  one, show the complete title and body exactly as they will be filed
+  and ask for approval; create it only after that. Approving the idea
+  ("file an issue for X") isn't approving a text that didn't exist yet,
+  and a change to the text after approval needs a new approval.
+  Creating an issue publishes it, and it may be cached or indexed even
+  after deletion.
+- A PR that resolves an issue closes it from its description:
+  `Closes #<n>` in the summary, not in the trailer block.
+
 ## Stop and ask
 
 - The repo's history mixes conventions (some commits use Conventional
@@ -195,12 +208,15 @@ trailers as the final block.
   reviewer before writing a review trailer.
 - It's uncertain which of two models is the newer release — ask; never
   guess a model name into a trailer.
+- An issue is about to be created — see "Issues": its text needs
+  approval first.
 
 ## Output
 
 A branch, commits, and a PR that follow these rules. For a PR, a title
-and a description ready to paste. For a check of existing work, the rule
-each deviation breaks.
+and a description ready to paste. For an issue, its title and body for
+approval, then the issue. For a check of existing work, the rule each
+deviation breaks.
 
 ## When a project has its own conventions
 

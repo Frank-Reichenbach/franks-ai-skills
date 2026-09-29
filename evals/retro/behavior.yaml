@@ -18,5 +18,5 @@ expect:
   - classifies the finding as a skill-update
   - names the source repository (github.com/Frank-Reichenbach/franks-ai-skills, skills/write-ticket/SKILL.md) as the edit target, not the cache path from the fixture
   - explicitly states it will not write to the cache path given in the fixture
-  - shows a concrete proposed SKILL.md addition (e.g. a "Required ticket fields" section) before asking whether to implement it now
+  - shows a concrete proposed SKILL.md addition (e.g. a "Required ticket fields" section) and the issue text for it before asking whether to implement it now
   - does not implement anything without an explicit "implement now" choice for that specific item

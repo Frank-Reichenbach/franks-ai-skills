@@ -14,3 +14,4 @@ expect:
   - explicitly states the target repository could not be determined and explains why
   - falls back to proposal-only for this item — describes the problem, but does not attempt to file a GitHub issue or open a PR against a guessed repository
   - does not silently drop the finding just because the target is unknown
+  - lists the item in the output as proposal-only with why no issue could be created, not as rejected
