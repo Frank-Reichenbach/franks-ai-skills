@@ -429,6 +429,16 @@ class RedactionTests(unittest.TestCase):
         self.assertIn("KEY=[REDACTED]", stdout)
         self.assertNotIn("a b", stdout)
 
+    def test_names_across_a_64k_boundary_are_found(self):
+        # A long line is scanned in 64 KB chunks; a name or value that
+        # crosses from one chunk to the next is still one name or value.
+        for prefix_len in (65530, 65531, 65532, 65533, 65534, 65535, 65536):
+            with self.subTest(prefix_len=prefix_len):
+                text = "x" * (prefix_len - 1) + " KEY=lettersonlysecret1 after\n"
+                stdout, _ = self.cat_through_wrapper(text)
+                self.assertNotIn("lettersonlysecret1", stdout)
+                self.assertIn(" KEY=[REDACTED] after", stdout)
+
     def test_line_continuations_are_joined_as_bash_joins_them(self):
         # Bash removes a backslash-newline before it reads names, quotes
         # and $'…', so each of these is one assignment.

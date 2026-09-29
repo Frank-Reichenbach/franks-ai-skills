@@ -65,42 +65,54 @@ BEGIN { FS = "\n"; st = ""; tail = "" }
 END { if (NR > 0 && !nonl) printf "\n" }
 
 # Prints the rest of the line from pos, masking every value after a
-# key= or token= name. The line is split at each = once, and the text
-# between them is printed and checked from those pieces, never from the
-# whole line: BSD awk's substr() takes longer the longer the line, so
-# calling it on the line once per value made the time grow with the
-# square of the number of values.
-function scan(    n, parts, i, from, start, eq, e) {
+# key= or token= name. The line is cut into 64 KB chunks, and each chunk
+# is split at each = once; the text between them is printed and checked
+# from those pieces. BSD awk's substr() takes longer the longer the
+# string it cuts from, so calling it on the whole line once per value
+# made the time grow with the square of the number of values, and
+# splitting the whole line at once made memory grow with it. A value or
+# name that crosses into the next chunk is read by position, through
+# at() and named().
+function scan(    cstart, chunk, clen, n, parts, i, start, eq, e) {
     if (index(substr(line, pos), "=") == 0) {
         printf "%s", substr(line, pos)
         return
     }
-    from = pos
-    n = split(substr(line, pos), parts, "=")
-    start = pos
-    for (i = 1; i < n; i++) {
-        # parts[i] starts at start, and the = after it is at eq. An =
-        # inside a value handled already is part of that value.
-        eq = start + length(parts[i])
-        if (eq >= pos) {
-            printf "%s=", substr(parts[i], pos - start + 1)
-            pos = eq + 1
-            if (named(parts, i, from)) {
-                e = value(pos)
-                emit(pos, e, st != "")
-                pos = e
-                if (st != "") return
+    cstart = pos
+    while (cstart <= len) {
+        chunk = substr(line, cstart, 65536)
+        clen = length(chunk)
+        n = split(chunk, parts, "=")
+        start = cstart
+        for (i = 1; i < n; i++) {
+            # parts[i] starts at start, and the = after it is at eq. An
+            # = inside a value handled already is part of that value.
+            eq = start + length(parts[i])
+            if (eq >= pos) {
+                printf "%s=", substr(parts[i], pos - start + 1)
+                pos = eq + 1
+                if (named(parts, i, cstart)) {
+                    e = value(pos)
+                    emit(pos, e, st != "")
+                    pos = e
+                    if (st != "") return
+                }
             }
+            start = eq + 1
         }
-        start = eq + 1
+        # parts[n] runs to the end of the chunk, unless a value went on.
+        if (pos < cstart + clen) {
+            printf "%s", substr(parts[n], pos - start + 1)
+            pos = cstart + clen
+        }
+        cstart = pos
     }
-    printf "%s", substr(parts[n], pos - start + 1)
 }
 
 # Whether the name before the = after parts[i] ends in key or token, any
 # case. Its last 5 bytes come from parts[i], from the pieces before it
-# if it is shorter, and then from the line before the scan started at
-# from, or, at the start of the line, from the line before a
+# if it is shorter, and then from the line before the chunk that starts
+# at from, or, at the start of the line, from the line before a
 # backslash-newline (joined).
 function named(parts, i, from,    s, j) {
     s = parts[i]
