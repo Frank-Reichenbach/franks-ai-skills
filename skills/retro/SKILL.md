@@ -96,11 +96,16 @@ the same as any other technical writing.
    - **record only** — create the issue and stop there; the open issue
      is the record.
    - **reject** — create nothing, and list it as rejected in the output.
+
+   A proposal that fell back to proposal-only in step 3 has no choice
+   that creates anything: it stays in the output as proposal-only, with
+   why no issue could be created — not as rejected.
 6. **Clear the reviewed memory entries once acknowledged.** After the
    per-item choices, list every memory entry this retro reviewed with
    where its content went: the issue (and PR, if implemented), a
-   proposal the user rejected, or dropped with its reason. Then ask the
-   user to acknowledge the list, and delete only after they have — every entry
+   proposal-only item with why no issue could be created, a proposal
+   the user rejected, or dropped with its reason. Then ask the user to
+   acknowledge the list, and delete only after they have — every entry
    they acknowledge, whatever its bucket and whether or not it was
    implemented. An entry they want to keep stays. Never delete a memory
    entry without that acknowledgment. Memory doesn't keep a second copy
@@ -112,6 +117,7 @@ the same as any other technical writing.
 A grouped list of proposals (skill-update / new-skill / project-config /
 bug-issue / drop), each with its concrete content and its target
 repository named explicitly, followed by each proposal's issue and PR
-links, or its rejection, and the memory entries listed
+links, its rejection, or why it stayed proposal-only, and the memory
+entries listed
 for acknowledgment, each with where its content went and whether it
 was deleted.
