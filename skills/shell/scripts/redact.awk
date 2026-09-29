@@ -30,7 +30,10 @@
 # nonl=1 (set by run.sh) means the input doesn't end in a newline, which
 # awk can't see itself; the output then doesn't either.
 
-BEGIN { st = ""; tail = "" }
+# FS = "\n" keeps each record a single field: this script never uses
+# fields, and BSD awk splitting a long line at every blank took about
+# 90 bytes of memory per byte of the line.
+BEGIN { FS = "\n"; st = ""; tail = "" }
 
 {
     if (NR > 1) printf "\n"
@@ -43,7 +46,7 @@ BEGIN { st = ""; tail = "" }
     # A line that starts inside a value.
     if (st != "") {
         e = value(1)
-        emit(substr(line, 1, e - 1), 1)
+        emit(1, e, 1)
         pos = e
     }
     if (st == "") scan()
@@ -62,43 +65,59 @@ BEGIN { st = ""; tail = "" }
 END { if (NR > 0 && !nonl) printf "\n" }
 
 # Prints the rest of the line from pos, masking every value after a
-# key= or token= name. The line is split at each = once, so a line with
-# many values is still read in one pass.
-function scan(    n, parts, i, eq, e) {
+# key= or token= name. The line is split at each = once, and the text
+# between them is printed and checked from those pieces, never from the
+# whole line: BSD awk's substr() takes longer the longer the line, so
+# calling it on the line once per value made the time grow with the
+# square of the number of values.
+function scan(    n, parts, i, from, start, eq, e) {
     if (index(substr(line, pos), "=") == 0) {
         printf "%s", substr(line, pos)
         return
     }
+    from = pos
     n = split(substr(line, pos), parts, "=")
-    eq = pos - 1
+    start = pos
     for (i = 1; i < n; i++) {
-        eq += length(parts[i]) + 1
-        # An = inside a value handled already is part of that value.
-        if (eq < pos || !named(eq)) continue
-        printf "%s", substr(line, pos, eq - pos + 1)
-        pos = eq + 1
-        e = value(pos)
-        emit(substr(line, pos, e - pos), st != "")
-        pos = e
-        if (st != "") return
+        # parts[i] starts at start, and the = after it is at eq. An =
+        # inside a value handled already is part of that value.
+        eq = start + length(parts[i])
+        if (eq >= pos) {
+            printf "%s=", substr(parts[i], pos - start + 1)
+            pos = eq + 1
+            if (named(parts, i, from)) {
+                e = value(pos)
+                emit(pos, e, st != "")
+                pos = e
+                if (st != "") return
+            }
+        }
+        start = eq + 1
     }
-    printf "%s", substr(line, pos)
+    printf "%s", substr(parts[n], pos - start + 1)
 }
 
-# Whether the name before the = at position p ends in key or token, any
-# case, with a name split by a backslash-newline joined first.
-function named(p,    s) {
-    if (p - 1 >= 5) s = substr(line, p - 5, 5)
-    else s = joined substr(line, 1, p - 1)
-    s = tolower(s)
-    return s ~ /(key|token)$/
+# Whether the name before the = after parts[i] ends in key or token, any
+# case. Its last 5 bytes come from parts[i], from the pieces before it
+# if it is shorter, and then from the line before the scan started at
+# from, or, at the start of the line, from the line before a
+# backslash-newline (joined).
+function named(parts, i, from,    s, j) {
+    s = parts[i]
+    for (j = i - 1; length(s) < 5 && j >= 1; j--) s = parts[j] "=" s
+    if (length(s) < 5) {
+        if (from > 5) s = substr(line, from - 5, 5) s
+        else if (from > 1) s = substr(line, 1, from - 1) s
+        else s = joined s
+    }
+    if (length(s) > 5) s = substr(s, length(s) - 4)
+    return tolower(s) ~ /(key|token)$/
 }
 
 # Returns the position after the value that starts at i. If the value
 # continues onto the next line, it returns len + 1 and sets st to the
 # state the next line starts in; otherwise it clears st.
 function value(i,    q, c) {
-    split_line()
     q = (st == "" ? "U" : st)
     st = ""
     if (q == "P") {
@@ -142,26 +161,33 @@ function value(i,    q, c) {
 }
 
 # The byte at position i of the line. BSD awk's substr() takes longer
-# the longer the line, so reading a long value one byte at a time with
-# it took time growing with the square of its length. A line over 1 KB
-# is split into bytes once instead; on a shorter one, substr() is
-# faster than the split. POSIX leaves split() with an empty separator
-# unspecified: if it doesn't yield one element per byte, substr() is
-# used after all.
+# the longer the string it cuts from, so reading a long line one byte at
+# a time with it took time growing with the square of the line length.
+# On a line over 1 KB, bytes are read from a 256-byte window, cut from a
+# 64 KB window, cut from the line: each substr() works on a short string,
+# and memory stays the same however long the line is.
 function at(i) {
-    return (nch == len ? ch[i] : substr(line, i, 1))
+    if (len <= 1024) return substr(line, i, 1)
+    if (w1nr != NR || i < w1 || i >= w1 + 65536) {
+        w1nr = NR
+        w1 = i
+        win1 = substr(line, i, 65536)
+        w2 = -1
+    }
+    if (w2 < 0 || i < w2 || i >= w2 + 256) {
+        w2 = i
+        win2 = substr(win1, i - w1 + 1, 256)
+    }
+    return substr(win2, i - w2 + 1, 1)
 }
 
-function split_line() {
-    if (split_nr == NR) return
-    split_nr = NR
-    nch = (len > 1024 ? split(line, ch, "") : -1)
-}
-
-# Prints a value, masked unless it is shorter than 8 bytes and doesn't
-# continue onto or from another line (forced).
-function emit(r, forced) {
-    if (r == "") return
-    if (!forced && length(r) < 8) printf "%s", r
-    else printf "[REDACTED]"
+# Prints the value from position a up to b, masked unless it is shorter
+# than 8 bytes and doesn't continue onto or from another line (forced).
+function emit(a, b, forced,    r, k) {
+    if (b <= a) return
+    if (!forced && b - a < 8) {
+        r = ""
+        for (k = a; k < b; k++) r = r at(k)
+        printf "%s", r
+    } else printf "[REDACTED]"
 }

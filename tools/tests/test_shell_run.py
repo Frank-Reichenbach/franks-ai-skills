@@ -406,13 +406,14 @@ class RedactionTests(unittest.TestCase):
                 self.assertIn("done", result.stdout)
 
     def test_many_values_on_one_line_take_linear_time(self):
-        # Regression: masking one value at a time rescanned the line from
-        # its start each time, so 1,600 values on one line took 4.5 s
-        # and doubling them took four times as long.
+        # Regression: rescanning the line from its start, or reading it
+        # with substr() once per value, made the time grow with the
+        # square of the number of values: 102,400 values on one line
+        # took 8.6 s.
         import time
 
         start = time.monotonic()
-        stdout, _ = self.cat_through_wrapper("key=abcdefgh " * 3200 + "\n")
+        stdout, _ = self.cat_through_wrapper("key=abcdefgh " * 100_000 + "\n")
         self.assertLess(time.monotonic() - start, 5)
         self.assertNotIn("abcdefgh", stdout)
 
@@ -433,8 +434,10 @@ class RedactionTests(unittest.TestCase):
         # and $'…', so each of these is one assignment.
         cases = (
             ("TOKEN=$\\\n'abcdefgh\\' LEAKTAIL\nlast'\n", ("abcdefgh", "LEAKTAIL", "last")),
-            # The same on a line over 1 KB, which is read from an array.
+            # The same on lines over 1 KB and over 64 KB, which are read
+            # through windows.
             ("TOKEN=" + "x" * 1100 + "$\\\n'abcdefgh\\' LEAKTAIL\nlast'\n", ("xxxx", "LEAKTAIL", "last")),
+            ("TOKEN=" + "x" * 70000 + "$\\\n'abcdefgh\\' LEAKTAIL\nlast'\n", ("xxxx", "LEAKTAIL", "last")),
             ('KEY=$\\\n"abcd efgh"\n', ("abcd", "efgh")),
             ("export API_KE\\\nY=lettersonlysecret1\n", ("lettersonlysecret1",)),
             ("AP\\\nI_K\\\nEY=lettersonlysecret1\n", ("lettersonlysecret1",)),
