@@ -39,8 +39,9 @@ shown above** — left unquoted, a plugin installed under a path
 containing a space breaks into multiple words and fails with "command
 not found."
 
-Requires `bash`, `sed`, and `iconv` — all present by default on macOS
-and the Linux CI images this plugin has been tested against (per
+Requires `bash`, `sed`, `awk`, `iconv`, `tr`, `head`, and `tail` — all
+present by default on macOS and the Linux CI images this plugin has
+been tested against, with BSD awk, mawk, and gawk (per
 `docs/security.md`'s rule to document required external binaries). No
 network access is needed.
 
@@ -95,7 +96,14 @@ the session; don't re-ask for it.
 3. **Redacted echo.** Once past the check, it prints the command it's
    about to run, with secret-shaped substrings (bearer tokens, `sk-`
    style API keys, `key=`/`token=` values) masked in that echo — not
-   just in the output.
+   just in the output. A `key=`/`token=` value is the whole shell word
+   after the `=` as bash reads it (`scripts/redact.awk`), quotes
+   included, so a quoted value with spaces, `\"` or `'\''` in it is
+   masked as a whole, and one that continues onto later lines (an open
+   quote, a trailing backslash) stays masked up to where it ends. A
+   name, `$'` or `$"` split by a backslash-newline is joined first, as
+   bash joins it. Values of fewer than 8 bytes, counted as written,
+   stay readable.
 4. **Execution.** Runs the command via `bash -c`, preserving quoting and
    the real exit status.
 5. **Redacted, bounded output.** stdout and stderr are captured
@@ -131,7 +139,15 @@ the session; don't re-ask for it.
   stdout/stderr, including output printed by a script the command calls
   — but it's still pattern matching, not comprehension, and can be
   fooled by a value shaped differently than the patterns expect, or miss
-  a secret a called script reads but never prints.
+  a secret a called script reads but never prints. Names other than
+  `key=`/`token=`, such as `password=` or `secret=`, aren't masked at
+  all. It reads every line as shell: in other text, such as source
+  code where a string ends right after a `KEY=` value, it takes that
+  closing quote as an open one and masks the following lines up to the
+  next matching quote. It is not a full shell parser: a value built
+  with `$( … )` or a heredoc ends at the first blank, so a secret
+  written inside one after a blank shows. A NUL byte in the output
+  shows as the control character US (`\x1f`).
 - Masking the wrapper's *echoed* command does not remove a secret
   already present in the actual tool-call arguments the host recorded —
   by the time the wrapper runs, the agent already had to type the full

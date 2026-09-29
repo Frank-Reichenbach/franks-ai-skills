@@ -320,6 +320,161 @@ class RedactionTests(unittest.TestCase):
         self.assertNotIn("abcd1234efgh5678", result.stdout)
         self.assertIn("REDACTED", result.stdout)
 
+    def cat_through_wrapper(self, text):
+        # Prints text through the wrapper on stdout and on stderr, from a
+        # file, so bash doesn't interpret the quotes in it.
+        with tempfile.TemporaryDirectory() as tmp:
+            f = Path(tmp) / "input.txt"
+            f.write_text(text)
+            return (
+                run_wrapper([f"cat {f}"]).stdout,
+                run_wrapper([f"cat {f} >&2"]).stderr,
+            )
+
+    def test_quoted_values_are_redacted_completely(self):
+        # (input, fragments of the secret that must not appear)
+        cases = (
+            ('API_KEY="abcd1234 efgh5678"\n', ("abcd1234", "efgh5678")),
+            ('SECRET_KEY="correct horse battery staple"\n', ("correct", "horse", "staple")),
+            ('KEY="abcd\\"efgh ijkl"\n', ("abcd", "efgh", "ijkl")),
+            ("TOKEN=$'abcd1234efgh 5678'\n", ("abcd1234efgh", "5678")),
+            ("KEY='abcd'\\''efgh ijkl'\n", ("abcd", "efgh", "ijkl")),
+            # Text inside a value that looks like a setting doesn't end it.
+            ('SECRET_KEY="pass trailer.foo.key=lettersonlysecret"\n', ("pass", "lettersonlysecret")),
+            # A value spanning lines, and one the input ends inside.
+            ('KEY="abcd1234\nefgh5678\nijkl"\n', ("abcd1234", "efgh5678", "ijkl")),
+            ("TOKEN='abcd1234\nefgh5678\n", ("abcd1234", "efgh5678")),
+            ('KEY="abcd1234\nefgh5678"\'ijkl\nmnop\'\n', ("efgh5678", "ijkl", "mnop")),
+            # A name inside an open value doesn't end it either.
+            ('KEY="abcd token=efgh5678\nijkl"\n', ("abcd", "efgh5678", "ijkl")),
+            # A quote opened after an unquoted part continues the value,
+            # and so does a backslash at the end of the line.
+            ('KEY=abcd1234"efgh\nijkl"\n', ("efgh", "ijkl")),
+            ("KEY=abcd1234\\\nefgh5678\n", ("abcd1234", "efgh5678")),
+            ("TOKEN=\\\nefgh5678\n", ("efgh5678",)),
+            ('KEY="abcd1234\nefgh5678"\\\nijkl\n', ("efgh5678", "ijkl")),
+            # $'…' allows \' inside; '…' doesn't, so a $' is never read
+            # as a $ followed by a single-quoted fragment.
+            ("TOKEN=$'abcdefgh\nijkl\\' LEAKTAIL\nlast'\n", ("abcdefgh", "ijkl", "LEAKTAIL", "last")),
+            # Moving from one quote style to the next across lines.
+            ("KEY=\"abcd1234\nefgh\"'ijkl\nmnop'$'qrst\\'\nuvwx'\n", ("efgh", "ijkl", "mnop", "qrst", "uvwx")),
+            ('KEY=$"abcd efgh"\n', ("abcd", "efgh")),
+        )
+        for text, fragments in cases:
+            with self.subTest(text=text):
+                for stream in self.cat_through_wrapper(text):
+                    for fragment in fragments:
+                        self.assertNotIn(fragment, stream)
+                    self.assertIn("REDACTED", stream)
+
+    def test_text_around_quoted_values_stays_readable(self):
+        cases = (
+            # Short values stay readable, as before (8-character minimum,
+            # counted over the value as written, quotes included).
+            ("key=abc\n", "key=abc"),
+            ('KEY="ab"\n', 'KEY="ab"'),
+            # Text after a value's closing quote is not part of it.
+            ('KEY="abcd1234\nefgh5678" && echo visible\n', "&& echo visible"),
+            ('KEY="abcd1234 efgh5678"\nnext line\n', "next line"),
+            # A name inside a closed value doesn't open a quote.
+            ('KEY="pass key=abcd1234efgh"\nnext line\n', "next line"),
+            ("KEY=abcd1234\\\nefgh5678 visible\n", " visible"),
+            # A $'…' value closed after an escaped quote leaves the next
+            # line alone, and so do the other quote transitions.
+            ("TOKEN=$'abcd\\'efgh'\nvisible line\n", "visible line"),
+            ("KEY=\"abcd1234\nefgh\"'ijkl\nmnop'$'qrst\\'\nuvwx'\nafter\n", "after"),
+            ('KEY=$"abcd efgh"\nvisible line\n', "visible line"),
+            # A $ at the end of a value belongs to it.
+            ("KEY=abcd1234$ next\n", "KEY=[REDACTED] next"),
+            # A quote outside a secret assignment starts nothing.
+            ('say "open\nplain text\n', "plain text"),
+        )
+        for text, visible in cases:
+            with self.subTest(text=text):
+                for stream in self.cat_through_wrapper(text):
+                    self.assertIn(visible, stream)
+
+    def test_quoted_value_in_command_echo_is_redacted(self):
+        for cmd in (
+            'export API_KEY="abcd1234 efgh5678"; echo done',
+            'export KEY="abcd1234\nefgh5678"; echo done',
+        ):
+            with self.subTest(cmd=cmd):
+                result = run_wrapper([cmd])
+                self.assertNotIn("abcd1234", result.stdout)
+                self.assertNotIn("efgh5678", result.stdout)
+                self.assertIn("done", result.stdout)
+
+    def test_many_values_on_one_line_take_linear_time(self):
+        # Regression: rescanning the line from its start, or reading it
+        # with substr() once per value, made the time grow with the
+        # square of the number of values: 102,400 values on one line
+        # took 8.6 s.
+        import time
+
+        start = time.monotonic()
+        stdout, _ = self.cat_through_wrapper("key=abcdefgh " * 100_000 + "\n")
+        self.assertLess(time.monotonic() - start, 5)
+        self.assertNotIn("abcdefgh", stdout)
+
+    def test_long_value_takes_linear_time(self):
+        # Regression: reading a value with substr() one byte at a time
+        # made BSD awk's time grow with the square of the line length:
+        # a 512 KB value took 5 s.
+        import time
+
+        start = time.monotonic()
+        stdout, _ = self.cat_through_wrapper('KEY="' + "a b " * 256 * 1024 + '"\n')
+        self.assertLess(time.monotonic() - start, 5)
+        self.assertIn("KEY=[REDACTED]", stdout)
+        self.assertNotIn("a b", stdout)
+
+    def test_names_across_a_64k_boundary_are_found(self):
+        # A long line is scanned in 64 KB chunks; a name or value that
+        # crosses from one chunk to the next is still one name or value.
+        for prefix_len in (65530, 65531, 65532, 65533, 65534, 65535, 65536):
+            with self.subTest(prefix_len=prefix_len):
+                text = "x" * (prefix_len - 1) + " KEY=lettersonlysecret1 after\n"
+                stdout, _ = self.cat_through_wrapper(text)
+                self.assertNotIn("lettersonlysecret1", stdout)
+                self.assertIn(" KEY=[REDACTED] after", stdout)
+
+    def test_line_continuations_are_joined_as_bash_joins_them(self):
+        # Bash removes a backslash-newline before it reads names, quotes
+        # and $'…', so each of these is one assignment.
+        cases = (
+            ("TOKEN=$\\\n'abcdefgh\\' LEAKTAIL\nlast'\n", ("abcdefgh", "LEAKTAIL", "last")),
+            # The same on lines over 1 KB and over 64 KB, which are read
+            # through windows.
+            ("TOKEN=" + "x" * 1100 + "$\\\n'abcdefgh\\' LEAKTAIL\nlast'\n", ("xxxx", "LEAKTAIL", "last")),
+            ("TOKEN=" + "x" * 70000 + "$\\\n'abcdefgh\\' LEAKTAIL\nlast'\n", ("xxxx", "LEAKTAIL", "last")),
+            ('KEY=$\\\n"abcd efgh"\n', ("abcd", "efgh")),
+            ("export API_KE\\\nY=lettersonlysecret1\n", ("lettersonlysecret1",)),
+            ("AP\\\nI_K\\\nEY=lettersonlysecret1\n", ("lettersonlysecret1",)),
+            ("KEY\\\n=lettersonlysecret1\n", ("lettersonlysecret1",)),
+            ("KEY=\\\nlettersonlysecret1\n", ("lettersonlysecret1",)),
+        )
+        for text, fragments in cases:
+            with self.subTest(text=text):
+                for stream in self.cat_through_wrapper(text):
+                    for fragment in fragments:
+                        self.assertNotIn(fragment, stream)
+                    self.assertIn("REDACTED", stream)
+
+    def test_control_characters_are_kept(self):
+        # A US (\x1f) comes out unchanged; a NUL comes out as US, because
+        # BSD awk would cut the line at it.
+        stdout, _ = self.cat_through_wrapper("a\x1fb key=abcd\x1f<efgh>1234\nc\x00d key=abcdefgh1\ne\n")
+        self.assertIn("a\x1fb key=[REDACTED]\n", stdout)
+        self.assertIn("c\x1fd key=[REDACTED]\ne\n", stdout)
+        self.assertNotIn("efgh", stdout)
+
+    def test_missing_final_newline_is_kept(self):
+        for text, end in (("key=abc", "key=abc"), ("KEY=abcdefgh1", "KEY=[REDACTED]")):
+            with self.subTest(text=text):
+                stdout, _ = self.cat_through_wrapper(text)
+                self.assertTrue(stdout.endswith("\n" + end), repr(stdout[-30:]))
+
     def test_quoted_value_is_fully_redacted(self):
         with tempfile.TemporaryDirectory() as tmp:
             f = Path(tmp) / "quoted.txt"

@@ -102,22 +102,36 @@ if [[ "$allow_secret_path" -eq 0 ]] && matched_label=$(secret_path_label "$cmd")
   exit 3
 fi
 
-# Matches complete values, including quoted ones and base64-shaped ones
-# (+, /, = are common in tokens) — anything up to the next quote,
-# whitespace, or semicolon, not just "word" characters. Best-effort: an
-# unusual format can still slip past.
+# key= and token= values (api_key= included) are masked by redact.awk, a
+# scanner that reads them as bash does, across quotes and line
+# continuations; its header lists what it covers. The other patterns
+# (bearer tokens, sk- keys) are matched per line by sed afterwards, and
+# match complete values, including base64-shaped ones (+, /, = are
+# common in tokens). Best-effort: an unusual format can still slip past.
+case $0 in
+  */*) redact_awk=${0%/*}/redact.awk ;;
+  *) redact_awk=redact.awk ;;
+esac
+
+# $1: 1 if the input doesn't end in a newline, which awk can't see.
 redact() {
-  # sed's own error text (e.g. "illegal byte sequence" on invalid bytes
-  # under the current locale) is suppressed here — the caller checks this
+  # tr turns NUL into US (\x1f): BSD awk cuts a line at a NUL. Error
+  # text (e.g. sed's "illegal byte sequence" on invalid bytes under the
+  # current locale) is suppressed here — the caller checks this
   # function's exit status and prints its own clear, attributed notice
-  # instead of leaking sed's raw, unattributed error line.
-  sed -E \
-    -e "s/[Bb]earer[[:space:]]+[\"']?[^\"'[:space:];]{8,}[\"']?/Bearer [REDACTED]/g" \
-    -e "s/sk-[^\"'[:space:];]{5,}/[REDACTED]/g" \
-    -e "s/([Aa][Pp][Ii][_-]?[Kk][Ee][Yy]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
-    -e "s/([Tt][Oo][Kk][Ee][Nn]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
-    -e "s/([Kk][Ee][Yy]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
-    2>/dev/null
+  # instead of leaking a raw, unattributed error line.
+  tr '\000' '\037' |
+    LC_ALL=C awk -v nonl="${1:-0}" -f "$redact_awk" 2>/dev/null |
+    sed -E \
+      -e "s/[Bb]earer[[:space:]]+[\"']?[^\"'[:space:];]{8,}[\"']?/Bearer [REDACTED]/g" \
+      -e "s/sk-[^\"'[:space:];]{5,}/[REDACTED]/g" \
+      2>/dev/null
+}
+
+# Whether file $1 doesn't end in a newline (a NUL counts as a byte, not
+# as the end of the text, hence the tr).
+lacks_final_newline() {
+  [ -s "$1" ] && [ -n "$(tail -c 1 "$1" | tr '\000' '\037')" ]
 }
 
 printf '$ %s\n' "$cmd" | redact
@@ -188,12 +202,16 @@ safe_tail() {
 stdout_redaction_ok=1
 stderr_redaction_ok=1
 if is_valid_utf8 < "$stdout_raw"; then
-  redact < "$stdout_raw" > "$stdout_redacted" || stdout_redaction_ok=0
+  nonl=0
+  lacks_final_newline "$stdout_raw" && nonl=1
+  redact "$nonl" < "$stdout_raw" > "$stdout_redacted" || stdout_redaction_ok=0
 else
   stdout_redaction_ok=0
 fi
 if is_valid_utf8 < "$stderr_raw"; then
-  redact < "$stderr_raw" > "$stderr_redacted" || stderr_redaction_ok=0
+  nonl=0
+  lacks_final_newline "$stderr_raw" && nonl=1
+  redact "$nonl" < "$stderr_raw" > "$stderr_redacted" || stderr_redaction_ok=0
 else
   stderr_redaction_ok=0
 fi
