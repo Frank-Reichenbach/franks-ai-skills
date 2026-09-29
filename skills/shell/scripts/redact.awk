@@ -183,7 +183,9 @@ function value(i,    q, c) {
 # a time with it took time growing with the square of the line length.
 # On a line over 1 KB, bytes are read from a 256-byte window, cut from a
 # 64 KB window, cut from the line: each substr() works on a short string,
-# and memory stays the same however long the line is.
+# and memory stays the same however long the line is. A byte array from
+# split(line, ch, "") is simpler, but took about 120 bytes of memory per
+# byte of line.
 function at(i) {
     if (len <= 1024) return substr(line, i, 1)
     if (w1nr != NR || i < w1 || i >= w1 + 65536) {
