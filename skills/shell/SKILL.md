@@ -145,8 +145,9 @@ the session; don't re-ask for it.
   code where a string ends right after a `KEY=` value, it takes that
   closing quote as an open one and masks the following lines up to the
   next matching quote. It is not a full shell parser: a value built
-  with `$( … )` or a heredoc ends at the first blank. A NUL byte in the
-  output shows as the control character US (`\x1f`).
+  with `$( … )` or a heredoc ends at the first blank, so a secret
+  written inside one after a blank shows. A NUL byte in the output
+  shows as the control character US (`\x1f`).
 - Masking the wrapper's *echoed* command does not remove a secret
   already present in the actual tool-call arguments the host recorded —
   by the time the wrapper runs, the agent already had to type the full
