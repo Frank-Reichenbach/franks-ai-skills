@@ -27,6 +27,7 @@ expect:
   - records both rejected approaches together with the reason each was rejected
   - names the upstream API's documented max-age=60 in the same sentence as the 60s TTL decision, since the repo doesn't record it
   - has no separate sources section
+  - states each fact once, in the section it belongs to; the summary doesn't preview the changes list, and the tests section doesn't re-explain the rejected approaches
   - its tests section names the added tests and what they cover (TTL expiry, cache-miss fallthrough, invalidation on write) rather than announcing that the suite passed
   - contains no checklist or reviewer-only notes
   - writes each paragraph and list item as a single line, without hard wraps

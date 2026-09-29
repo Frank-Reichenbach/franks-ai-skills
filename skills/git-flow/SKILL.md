@@ -162,6 +162,11 @@ why. (Order after Google's engineering practices, "Writing good CL
 descriptions", and the Linux kernel's "Describe your changes": the
 problem before the solution.)
 
+State each fact once, in the section it belongs to: Changes says what,
+Decisions says why, Tests says what is covered. A summary that previews
+the Changes list, or a Tests entry that re-explains a rule, adds length
+without adding information.
+
 **The description states the branch as it is now, not how it got
 there.** After every push — above all one that answers a review — and
 after every rebase, re-derive each claim from `git diff <target>...HEAD`
