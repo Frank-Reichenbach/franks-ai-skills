@@ -32,3 +32,17 @@ jobs:
 
       - name: Run validation
         run: ./tools/validate.sh
+
+      # run.sh's redact.awk has to work with every common awk: mawk is
+      # Ubuntu's default, gawk the GNU one (BSD awk is macOS's, checked
+      # locally).
+      - name: Test the shell wrapper with mawk and gawk
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq mawk gawk
+          for awk in mawk gawk; do
+            shim=$(mktemp -d)
+            ln -s "$(command -v "$awk")" "$shim/awk"
+            echo "== $("$awk" -W version 2>&1 | head -n 1)"
+            PATH="$shim:$PATH" python3 -m unittest tools.tests.test_shell_run
+          done

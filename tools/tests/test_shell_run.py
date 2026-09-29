@@ -416,18 +416,37 @@ class RedactionTests(unittest.TestCase):
         self.assertLess(time.monotonic() - start, 5)
         self.assertNotIn("abcdefgh", stdout)
 
-    def test_marker_character_in_input_is_kept(self):
-        # redact() marks values with the control character US (\x1f); one
-        # already in the input comes out unchanged and ends no value.
-        stdout, _ = self.cat_through_wrapper("a\x1fb key=abcd\x1f<efgh>1234\n")
-        self.assertIn("a\x1fb key=[REDACTED]", stdout)
+    def test_line_continuations_are_joined_as_bash_joins_them(self):
+        # Bash removes a backslash-newline before it reads names, quotes
+        # and $'…', so each of these is one assignment.
+        cases = (
+            ("TOKEN=$\\\n'abcdefgh\\' LEAKTAIL\nlast'\n", ("abcdefgh", "LEAKTAIL", "last")),
+            ('KEY=$\\\n"abcd efgh"\n', ("abcd", "efgh")),
+            ("export API_KE\\\nY=lettersonlysecret1\n", ("lettersonlysecret1",)),
+            ("AP\\\nI_K\\\nEY=lettersonlysecret1\n", ("lettersonlysecret1",)),
+            ("KEY\\\n=lettersonlysecret1\n", ("lettersonlysecret1",)),
+            ("KEY=\\\nlettersonlysecret1\n", ("lettersonlysecret1",)),
+        )
+        for text, fragments in cases:
+            with self.subTest(text=text):
+                for stream in self.cat_through_wrapper(text):
+                    for fragment in fragments:
+                        self.assertNotIn(fragment, stream)
+                    self.assertIn("REDACTED", stream)
+
+    def test_control_characters_are_kept(self):
+        # A US (\x1f) comes out unchanged; a NUL comes out as US, because
+        # BSD awk would cut the line at it.
+        stdout, _ = self.cat_through_wrapper("a\x1fb key=abcd\x1f<efgh>1234\nc\x00d key=abcdefgh1\ne\n")
+        self.assertIn("a\x1fb key=[REDACTED]\n", stdout)
+        self.assertIn("c\x1fd key=[REDACTED]\ne\n", stdout)
         self.assertNotIn("efgh", stdout)
 
-    def test_marker_in_input_does_not_unmask(self):
-        # redact() marks values while it works on them; input that
-        # already contains a marker must not come out as key=<secret>.
-        stdout, _ = self.cat_through_wrapper("key@RUNSH_S@=abcd1234efgh5678\n")
-        self.assertNotIn("key=abcd1234efgh5678", stdout)
+    def test_missing_final_newline_is_kept(self):
+        for text, end in (("key=abc", "key=abc"), ("KEY=abcdefgh1", "KEY=[REDACTED]")):
+            with self.subTest(text=text):
+                stdout, _ = self.cat_through_wrapper(text)
+                self.assertTrue(stdout.endswith("\n" + end), repr(stdout[-30:]))
 
     def test_quoted_value_is_fully_redacted(self):
         with tempfile.TemporaryDirectory() as tmp:

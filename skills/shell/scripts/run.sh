@@ -102,112 +102,36 @@ if [[ "$allow_secret_path" -eq 0 ]] && matched_label=$(secret_path_label "$cmd")
   exit 3
 fi
 
-# Matches complete values, including quoted ones and base64-shaped ones
-# (+, /, = are common in tokens), not just "word" characters.
-# Best-effort: an unusual format can still slip past.
-#
-# A key= or token= value (api_key= included) is the whole shell word
-# after the =, as bash reads it: unquoted characters, backslash escapes,
-# and "…", '…' and $'…' fragments, so a quoted value with spaces, \" or
-# '\'' in it is masked as a whole. A value of fewer than 8 characters,
-# counted as written with its quotes, stays readable. A value that ends
-# its line inside an open quote, or with a backslash, continues on the
-# next line: the rest of the line is masked, and so is the next line up
-# to the closing quote or the end of the word. If the input ends first,
-# everything after the opening quote stays masked. The hold space
-# carries the open state from one line to the next: D ("), S ('),
-# A ($'), C (backslash) or N (none).
-#
-# sed marks a value while it works on it (@RUNSH_…@, and the control
-# character US, \x1f, before and after it: the one marker a bracket
-# expression can exclude in both GNU and BSD sed, where [^\n] means
-# neither a backslash nor an n). Markers already in the input are
-# neutralized first, so they can't unmask a value, and show as @RUNSH-…
-# in the output; a US in the input is restored at the end.
-q="'"
-us=$'\x1f'
-# One fragment of a shell word; a quote left open to the end of the
-# line; the rest of a quote opened on an earlier line. A $ is a fragment
-# of its own: $'…' allows \' inside and '…' doesn't, so $' must never
-# read as a $ followed by a single-quoted fragment.
-dq='\$?"([^"\\]|\\.)*"'
-sq="$q[^$q]*$q"
-aq='\$'"$q"'([^'"$q"'\\]|\\.)*'"$q"
-dollar='\$([^"'"$q"'[:space:];\\]|\\.|$)'
-frag="($dq|$sq|$aq|$dollar|"'\\.|[^"'"$q"'$[:space:];\\])'
-dq_open='\$?"([^"\\]|\\.)*\\?$'
-sq_open="$q[^$q]*\$"
-aq_open='\$'"$q"'([^'"$q"'\\]|\\.)*\\?$'
-bs_open='\$?\\$'
-dq_close='([^"\\]|\\.)*"'
-sq_close="[^$q]*$q"
-aq_close='([^'"$q"'\\]|\\.)*'"$q"
-name='([Kk][Ee][Yy]|[Tt][Oo][Kk][Ee][Nn])'
+# key= and token= values (api_key= included) are masked by redact.awk, a
+# scanner that reads them as bash does, across quotes and line
+# continuations; its header lists what it covers. The other patterns
+# (bearer tokens, sk- keys) are matched per line by sed afterwards, and
+# match complete values, including base64-shaped ones (+, /, = are
+# common in tokens). Best-effort: an unusual format can still slip past.
+case $0 in
+  */*) redact_awk=${0%/*}/redact.awk ;;
+  *) redact_awk=redact.awk ;;
+esac
 
-redact_script=
-add() { redact_script+="$1"$'\n'; }
-# A value matched by $1 that continues on the next line: replace it with
-# $2 and tag the line with the state the next line starts in.
-continues() {
-  add "s/$1$dq_open/$2@RUNSH_QD@/"
-  add "s/$1$sq_open/$2@RUNSH_QS@/"
-  add "s/$1$aq_open/$2@RUNSH_QA@/"
-  add "s/$1$bs_open/$2@RUNSH_QC@/"
+# $1: 1 if the input doesn't end in a newline, which awk can't see.
+redact() {
+  # tr turns NUL into US (\x1f): BSD awk cuts a line at a NUL. Error
+  # text (e.g. sed's "illegal byte sequence" on invalid bytes under the
+  # current locale) is suppressed here — the caller checks this
+  # function's exit status and prints its own clear, attributed notice
+  # instead of leaking a raw, unattributed error line.
+  tr '\000' '\037' |
+    LC_ALL=C awk -v nonl="${1:-0}" -f "$redact_awk" 2>/dev/null |
+    sed -E \
+      -e "s/[Bb]earer[[:space:]]+[\"']?[^\"'[:space:];]{8,}[\"']?/Bearer [REDACTED]/g" \
+      -e "s/sk-[^\"'[:space:];]{5,}/[REDACTED]/g" \
+      2>/dev/null
 }
 
-add 's/@RUNSH_/@RUNSH-/g'
-add "s/$us/@RUNSH_US@/g"
-# Prefix the line with the state the previous line left.
-add 'x'
-add 'G'
-# A line that starts inside a value: mask up to where the value ends.
-for state in D S A C; do
-  case $state in
-    D) close=$dq_close ;;
-    S) close=$sq_close ;;
-    A) close=$aq_close ;;
-    C) close= ;;
-  esac
-  continues "^$state\\n$close$frag*" '[REDACTED]'
-  add "s/^$state\\n$close$frag*\\\$?/[REDACTED]/"
-  [ "$state" = C ] || add "s/^$state\\n.*/[REDACTED]@RUNSH_Q$state@/"
-done
-add 's/^N?\n//'
-# Mark every complete value in one pass, US and < before it and US and >
-# after it. The g flag resumes after each match, so a name
-# inside a value never counts as a name of its own, and the line is
-# scanned once however many values it holds.
-add "s/$name=($frag+)/\\1$us<\\2$us>/g"
-# Only the last value can be followed by a quote left open or a
-# backslash at the end of the line.
-continues "$us<[^$us]*$us>" '@RUNSH_M@=[REDACTED]'
-# A $ left directly after a value (before a blank or ;) belongs to it.
-add "s/$us>"'\$/$'"$us>/g"
-add "s/$us<[^$us]{8,}$us>/@RUNSH_M@=[REDACTED]/g"
-add "s/$us<([^$us]*)$us>/@RUNSH_S@=\\1/g"
-# A value that opens a quote or ends in a backslash right after the =.
-continues "$name=$frag*" '\1@RUNSH_M@=[REDACTED]'
-add "s/[Bb]earer[[:space:]]+[\"']?[^\"'[:space:];]{8,}[\"']?/Bearer [REDACTED]/g"
-add "s/sk-[^\"'[:space:];]{5,}/[REDACTED]/g"
-add 's/@RUNSH_[MS]@=/=/g'
-# Move the line's state tag into the hold space, N if it has none.
-add 't statereset'
-add ':statereset'
-add 'h'
-add 's/.*@RUNSH_Q(.)@$/\1/'
-add 't state'
-add 's/.*/N/'
-add ':state'
-add 'x'
-add 's/@RUNSH_Q.@$//'
-add "s/@RUNSH_US@/$us/g"
-
-redact() {
-  # sed's own error text (e.g. "illegal byte sequence" on invalid bytes
-  # under the current locale) is suppressed here — the caller checks this
-  # function's exit status and prints its own clear, attributed notice
-  # instead of leaking sed's raw, unattributed error line.
-  sed -E -e "$redact_script" 2>/dev/null
+# Whether file $1 doesn't end in a newline (a NUL counts as a byte, not
+# as the end of the text, hence the tr).
+lacks_final_newline() {
+  [ -s "$1" ] && [ -n "$(tail -c 1 "$1" | tr '\000' '\037')" ]
 }
 
 printf '$ %s\n' "$cmd" | redact
@@ -278,12 +202,16 @@ safe_tail() {
 stdout_redaction_ok=1
 stderr_redaction_ok=1
 if is_valid_utf8 < "$stdout_raw"; then
-  redact < "$stdout_raw" > "$stdout_redacted" || stdout_redaction_ok=0
+  nonl=0
+  lacks_final_newline "$stdout_raw" && nonl=1
+  redact "$nonl" < "$stdout_raw" > "$stdout_redacted" || stdout_redaction_ok=0
 else
   stdout_redaction_ok=0
 fi
 if is_valid_utf8 < "$stderr_raw"; then
-  redact < "$stderr_raw" > "$stderr_redacted" || stderr_redaction_ok=0
+  nonl=0
+  lacks_final_newline "$stderr_raw" && nonl=1
+  redact "$nonl" < "$stderr_raw" > "$stderr_redacted" || stderr_redaction_ok=0
 else
   stderr_redaction_ok=0
 fi
