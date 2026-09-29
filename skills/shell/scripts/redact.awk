@@ -9,6 +9,11 @@
 # continues onto another line. The name is found wherever it appears,
 # also inside quotes, just as a plain text match would.
 #
+# Why a scanner and not sed rules: sed matches one physical line at a
+# time, so every construct a backslash-newline can split (a name, $', the
+# =) needed a state of its own in generated rules, and review kept
+# finding one they missed. Here the join is handled in one place.
+#
 # Bash removes a backslash-newline before it reads names, quotes and $'.
 # This scanner reads one physical line at a time and carries across the
 # line break what that join needs:
