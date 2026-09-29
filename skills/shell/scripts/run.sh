@@ -106,6 +106,14 @@ fi
 # (+, /, = are common in tokens) — anything up to the next quote,
 # whitespace, or semicolon, not just "word" characters. Best-effort: an
 # unusual format can still slip past.
+#
+# The bare key= rule exempts only names that denote a public value by
+# definition: git's trailer.<name>.key (a trailer key name), signingkey
+# (git's user.signingKey, a key ID or path) and public_key/publickey/
+# pubkey. Every other key= name stays masked, whatever its value looks
+# like. POSIX ERE has no lookbehind, so an exempt name is marked before
+# the key= rule runs and unmarked after it; a marker already present in
+# the input is neutralized first, so it can't unmask a key=<secret>.
 redact() {
   # sed's own error text (e.g. "illegal byte sequence" on invalid bytes
   # under the current locale) is suppressed here — the caller checks this
@@ -116,7 +124,12 @@ redact() {
     -e "s/sk-[^\"'[:space:];]{5,}/[REDACTED]/g" \
     -e "s/([Aa][Pp][Ii][_-]?[Kk][Ee][Yy]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
     -e "s/([Tt][Oo][Kk][Ee][Nn]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
+    -e "s/@RUNSH_KEEP@/@RUNSH-KEEP@/g" \
+    -e "s/([Tt][Rr][Aa][Ii][Ll][Ee][Rr]\.[^.[:space:]\"'=]+\.[Kk][Ee][Yy])=/\1@RUNSH_KEEP@=/g" \
+    -e "s/([Ss][Ii][Gg][Nn][Ii][Nn][Gg][Kk][Ee][Yy])=/\1@RUNSH_KEEP@=/g" \
+    -e "s/([Pp][Uu][Bb]([Ll][Ii][Cc])?[_-]?[Kk][Ee][Yy])=/\1@RUNSH_KEEP@=/g" \
     -e "s/([Kk][Ee][Yy]=)[\"']?[^\"'[:space:];]{8,}[\"']?/\1[REDACTED]/g" \
+    -e "s/@RUNSH_KEEP@=/=/g" \
     2>/dev/null
 }
 

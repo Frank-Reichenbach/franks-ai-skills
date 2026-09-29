@@ -320,6 +320,48 @@ class RedactionTests(unittest.TestCase):
         self.assertNotIn("abcd1234efgh5678", result.stdout)
         self.assertIn("REDACTED", result.stdout)
 
+    def test_git_trailer_key_name_is_readable(self):
+        # Regression: `key=` masked the trailer key name in
+        # `git -c trailer.<name>.key=<name>`, a plain setting.
+        result = run_wrapper(["echo git -c trailer.assisted-by.key=Assisted-by log"])
+        self.assertEqual(result.stdout.count("trailer.assisted-by.key=Assisted-by"), 2)
+        self.assertNotIn("REDACTED", result.stdout)
+
+    def test_public_key_names_are_readable(self):
+        for line in (
+            "user.signingkey=ABCDEF1234567890",
+            "user.signingKey=ABCDEF1234567890",
+            "public_key=ABCDEF1234567890",
+            "PUBLICKEY=ABCDEF1234567890",
+            "pubkey=ABCDEF1234567890",
+        ):
+            with self.subTest(line=line):
+                result = run_wrapper([f"echo {line}"])
+                self.assertIn(line, result.stdout)
+                self.assertNotIn("REDACTED", result.stdout)
+
+    def test_other_key_names_stay_redacted(self):
+        # Neither a dotted name nor a letters-only value exempts a key:
+        # only the names in the allowlist do.
+        for line in (
+            "helm install x --set auth.key=abcd1234efgh5678",
+            "SECRET_KEY=lettersonlysecret",
+            "private_key=abcd1234efgh5678",
+            "trailer.assisted-by.key=Assisted-by key=abcd1234efgh5678",
+        ):
+            with self.subTest(line=line):
+                result = run_wrapper([f"echo {line}"])
+                self.assertNotIn("abcd1234efgh5678", result.stdout)
+                self.assertNotIn("lettersonlysecret", result.stdout)
+                self.assertIn("REDACTED", result.stdout)
+
+    def test_allowlist_marker_in_input_does_not_unmask(self):
+        # The allowlist protects a name by marking it before the key=
+        # rule runs and unmarking it after; input that already contains
+        # the marker must not come out as an unmasked key=<secret>.
+        result = run_wrapper(["echo key@RUNSH_KEEP@=abcd1234efgh5678"])
+        self.assertNotIn("key=abcd1234efgh5678", result.stdout)
+
     def test_quoted_value_is_fully_redacted(self):
         with tempfile.TemporaryDirectory() as tmp:
             f = Path(tmp) / "quoted.txt"
