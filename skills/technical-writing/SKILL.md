@@ -85,6 +85,25 @@ Two recurring failure modes:
 Use plain labels: "Tests", "Limitations", "Breaking change" — not
 "Tests (all green)".
 
+## Decision requests
+
+When the reader has to decide something, lead with the decision and give
+them what they need to make it, in this order:
+
+1. **Decision needed** — the question, with the recommendation in one
+   line.
+2. **Current state** — what exists now, in terms a reader new to the
+   topic follows.
+3. **Problem** — what is wrong and why it matters, with one concrete
+   example.
+4. **Options** — for each: what it changes, its benefit, its cost.
+5. **Recommendation** — which option, and why.
+6. **Next steps** — what happens once the reader decides, and how short
+   an answer can be ("A", "A + B").
+
+Keep facts and assumptions visibly apart: a claim you haven't verified
+yourself — a reviewer's, a subagent's — is an assumption until checked.
+
 ## Language choice (German or English)
 
 - Match the language of the request or the surrounding project by default.
