@@ -1,0 +1,26 @@
+# Behavioral eval for retro's rule that every proposal changing files in
+# a git repository is recorded as an issue there, created only after its
+# text is approved. Supplementary scenario file; see docs/releases.md.
+# The acme-api repo and the "lint-first" finding are fictional example
+# values.
+prompt: >
+  Fixture: a retro in the acme-api repository (github.com/example/acme-api,
+  which has an AGENTS.md) found two things. (1) The frank plugin's
+  git-flow skill (source repository
+  github.com/Frank-Reichenbach/franks-ai-skills) should say that a PR
+  description names the issue it closes; that holds in any project.
+  (2) "lint-first": in acme-api only, `make lint` must run before
+  `make test`, because the test target reads the linter's cache.
+
+  For finding 1 the user chooses "implement now", for finding 2 "record
+  only".
+
+  Run the rest of the retro.
+expect:
+  - classifies finding 1 as a skill-update targeting github.com/Frank-Reichenbach/franks-ai-skills and finding 2 as project-config targeting github.com/example/acme-api
+  - drafts an issue for each in the repository its change targets, with symptom, cause, required behavior and how to verify it
+  - shows each issue's complete title and body and asks for approval before creating it
+  - creates no issue and no branch before that approval
+  - for finding 1, creates the issue first, then the branch and PR, and the PR description contains "Closes #<n>" for that issue
+  - for finding 2, creates the issue in acme-api and makes no code change
+  - lists both issues, and the PR for finding 1, in the output

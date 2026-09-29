@@ -20,6 +20,7 @@ expect:
   - reviews the memory entry even though the session itself had no friction
   - 'classifies it as a skill-update to git-flow in github.com/Frank-Reichenbach/franks-ai-skills, because the reason is how git parses trailers and holds in any project, not a preference of Jane''s or a fact about acme-api'
   - states the rule in general form, without the acme-api repo or Jane
-  - shows the concrete proposed git-flow addition before asking whether to implement it
-  - after the per-item choice, lists the entry with where its content went and asks the user to acknowledge that list
+  - shows the concrete proposed git-flow addition and the issue text for it before asking what to do with it
+  - creates the issue only after the user approves its text
+  - after the per-item choice, lists the entry with the issue its content went into and asks the user to acknowledge that list
   - deletes the entry only after the user has acknowledged it, whether or not the skill-update was implemented
