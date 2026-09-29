@@ -20,15 +20,15 @@ rest of the session — not only the one `r00t` was invoked alongside.
 - `technical-writing` — clarity, structure, and tone for technical prose,
   without editorializing, with a default client-facing voice projects can
   override.
-- `git-flow` — branching, commit, and pull-request conventions, including
-  the rule that merging always needs an explicit request or human
-  approval.
+- `git-flow` — branching, commit, pull-request and issue conventions,
+  including the rules that merging always needs an explicit request or
+  human approval and that an issue's text is approved before it's created.
 - `shell` — runs shell commands through a wrapper with best-effort secret
   redaction and a user-authorized-only override for known secret
   locations.
 - `retro` — reviews a session and the agent's memory, proposes skill
   updates, new skills, project configuration changes, or bug reports,
-  targeting each proposal's actual source repository, and clears the
+  records each as an issue in the repository it targets, and clears the
   memory entries it reviewed once the user acknowledges them.
 
 Update this list whenever a new skill is added to this plugin (see
