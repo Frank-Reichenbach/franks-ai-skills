@@ -8,7 +8,8 @@ prompt: >
   which has an AGENTS.md) found two things. (1) The frank plugin's
   git-flow skill (source repository
   github.com/Frank-Reichenbach/franks-ai-skills) should say that a PR
-  description names the issue it closes; that holds in any project.
+  description names the issue it closes; that holds in any project. In
+  this fixture, git-flow has no rule about closing issues from a PR.
   (2) "lint-first": in acme-api only, `make lint` must run before
   `make test`, because the test target reads the linter's cache.
 
