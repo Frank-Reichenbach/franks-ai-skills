@@ -336,6 +336,8 @@ class RedactionTests(unittest.TestCase):
             "git -c user.signingKey=ABCDEF1234567890 commit",
             'git -c "trailer.assisted-by.key=Assisted-by" log',
             "a\tpublic_key=ABCDEF1234567890",
+            # A line after a continued one starts a new word again.
+            "private\\\nx\ntrailer.assisted-by.key=Assisted-by",
             "PUBLICKEY=ABCDEF1234567890",
             "pubkey=ABCDEF1234567890",
         ):
@@ -356,6 +358,13 @@ class RedactionTests(unittest.TestCase):
             "αuser.signingKey=lettersonlysecret",
             "私trailer.foo.key=lettersonlysecret",
             "https://example.invalid/?x=1&public_key=lettersonlysecret",
+            # Bash joins a quoted fragment and a continued line to the
+            # word before it: these names are privatepublic_key and
+            # privatetrailer.foo.key, not exempt names.
+            'export private"public_key=lettersonlysecret"',
+            "private\"trailer.foo.key=lettersonlysecret\"",
+            "private\\\npublic_key=lettersonlysecret",
+            "a\\\nb\\\nuser.signingKey=lettersonlysecret",
             # A trailer name is letters, digits and hyphens, so the
             # exemption can't cross a delimiter into another field.
             "https://example.invalid/trailer.foo?auth.key=lettersonlysecret",
@@ -381,6 +390,15 @@ class RedactionTests(unittest.TestCase):
                     self.assertNotIn("abcd1234efgh5678", stream)
                     self.assertNotIn("lettersonlysecret", stream)
                     self.assertIn("REDACTED", stream)
+
+    def test_single_quote_concatenation_stays_redacted(self):
+        # The printf wrapper in the test above can't carry a single
+        # quote, so this case runs as a command of its own.
+        result = run_wrapper(
+            ["export private'public_key=lettersonlysecret'; declare -p privatepublic_key"]
+        )
+        self.assertNotIn("lettersonlysecret", result.stdout)
+        self.assertEqual(result.stdout.count("REDACTED"), 2)
 
     def test_allowlist_marker_in_input_does_not_unmask(self):
         # The allowlist protects a name by marking it before the key=

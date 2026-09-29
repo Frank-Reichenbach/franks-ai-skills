@@ -100,9 +100,11 @@ the session; don't re-ask for it.
    under a complete name that denotes a public value: git's
    `trailer.<name>.key` (`<name>` of letters, digits and hyphens) and
    `user.signingKey`, and `public_key`/`publickey`/`pubkey`, each
-   preceded by the start of the line, a blank or a quote. Every other
-   `key=` value of 8 or more characters is masked, whatever it looks
-   like.
+   starting a word: after the start of a line or a blank, optionally
+   through an opening quote. A quote inside a word, or a line after one
+   ending in `\`, continues the word before it, so the value stays
+   masked. Every other `key=` value of 8 or more characters is masked,
+   whatever it looks like.
 4. **Execution.** Runs the command via `bash -c`, preserving quoting and
    the real exit status.
 5. **Redacted, bounded output.** stdout and stderr are captured
