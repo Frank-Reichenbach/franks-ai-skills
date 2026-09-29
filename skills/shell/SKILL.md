@@ -139,8 +139,9 @@ the session; don't re-ask for it.
   a secret a called script reads but never prints. Names other than
   `key=`/`token=`, such as `password=` or `secret=`, aren't masked at
   all. And it reads every line as shell: in other text, such as source
-  code with `KEY=…"` inside a string, a quote it takes as open masks the
-  following lines up to the next matching quote.
+  code where a string ends right after a `KEY=` value, it takes that
+  closing quote as an open one and masks the following lines up to the
+  next matching quote.
 - Masking the wrapper's *echoed* command does not remove a secret
   already present in the actual tool-call arguments the host recorded —
   by the time the wrapper runs, the agent already had to type the full

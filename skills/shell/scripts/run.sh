@@ -118,20 +118,27 @@ fi
 # carries the open state from one line to the next: D ("), S ('),
 # A ($'), C (backslash) or N (none).
 #
-# sed marks a value while it works on it (@RUNSH_…@); markers already in
-# the input are neutralized first, so they can't unmask a value, and
-# show as @RUNSH-… in the output.
+# sed marks a value while it works on it (@RUNSH_…@, and the control
+# character US, \x1f, before and after it: the one marker a bracket
+# expression can exclude in both GNU and BSD sed, where [^\n] means
+# neither a backslash nor an n). Markers already in the input are
+# neutralized first, so they can't unmask a value, and show as @RUNSH-…
+# in the output; a US in the input is restored at the end.
 q="'"
+us=$'\x1f'
 # One fragment of a shell word; a quote left open to the end of the
-# line; the rest of a quote opened on an earlier line.
-dq='"([^"\\]|\\.)*"'
+# line; the rest of a quote opened on an earlier line. A $ is a fragment
+# of its own: $'…' allows \' inside and '…' doesn't, so $' must never
+# read as a $ followed by a single-quoted fragment.
+dq='\$?"([^"\\]|\\.)*"'
 sq="$q[^$q]*$q"
 aq='\$'"$q"'([^'"$q"'\\]|\\.)*'"$q"
-frag="($dq|$sq|$aq|"'\\.|[^"'"$q"'[:space:];\\])'
-dq_open='"([^"\\]|\\.)*\\?$'
+dollar='\$([^"'"$q"'[:space:];\\]|\\.|$)'
+frag="($dq|$sq|$aq|$dollar|"'\\.|[^"'"$q"'$[:space:];\\])'
+dq_open='\$?"([^"\\]|\\.)*\\?$'
 sq_open="$q[^$q]*\$"
 aq_open='\$'"$q"'([^'"$q"'\\]|\\.)*\\?$'
-bs_open='\\$'
+bs_open='\$?\\$'
 dq_close='([^"\\]|\\.)*"'
 sq_close="[^$q]*$q"
 aq_close='([^'"$q"'\\]|\\.)*'"$q"
@@ -149,6 +156,7 @@ continues() {
 }
 
 add 's/@RUNSH_/@RUNSH-/g'
+add "s/$us/@RUNSH_US@/g"
 # Prefix the line with the state the previous line left.
 add 'x'
 add 'G'
@@ -161,25 +169,22 @@ for state in D S A C; do
     C) close= ;;
   esac
   continues "^$state\\n$close$frag*" '[REDACTED]'
-  add "s/^$state\\n$close$frag*/[REDACTED]/"
+  add "s/^$state\\n$close$frag*\\\$?/[REDACTED]/"
   [ "$state" = C ] || add "s/^$state\\n.*/[REDACTED]@RUNSH_Q$state@/"
 done
 add 's/^N?\n//'
-# Mask one complete value at a time, leftmost first, so a name inside a
-# value never counts as a name of its own. The = is marked on each
-# value handled, so the loop ends.
-add ':loop'
-add 't loopreset'
-add ':loopreset'
-add "s/$name=($frag+)/\\1@RUNSH_A@\\2@RUNSH_B@/"
-add 't mark'
-add 'b done'
-add ':mark'
-continues '@RUNSH_A@.*@RUNSH_B@' '@RUNSH_M@=[REDACTED]'
-add 's/@RUNSH_A@.{8,}@RUNSH_B@/@RUNSH_M@=[REDACTED]/'
-add 's/@RUNSH_A@(.*)@RUNSH_B@/@RUNSH_S@=\1/'
-add 'b loop'
-add ':done'
+# Mark every complete value in one pass, US and < before it and US and >
+# after it. The g flag resumes after each match, so a name
+# inside a value never counts as a name of its own, and the line is
+# scanned once however many values it holds.
+add "s/$name=($frag+)/\\1$us<\\2$us>/g"
+# Only the last value can be followed by a quote left open or a
+# backslash at the end of the line.
+continues "$us<[^$us]*$us>" '@RUNSH_M@=[REDACTED]'
+# A $ left directly after a value (before a blank or ;) belongs to it.
+add "s/$us>"'\$/$'"$us>/g"
+add "s/$us<[^$us]{8,}$us>/@RUNSH_M@=[REDACTED]/g"
+add "s/$us<([^$us]*)$us>/@RUNSH_S@=\\1/g"
 # A value that opens a quote or ends in a backslash right after the =.
 continues "$name=$frag*" '\1@RUNSH_M@=[REDACTED]'
 add "s/[Bb]earer[[:space:]]+[\"']?[^\"'[:space:];]{8,}[\"']?/Bearer [REDACTED]/g"
@@ -195,6 +200,7 @@ add 's/.*/N/'
 add ':state'
 add 'x'
 add 's/@RUNSH_Q.@$//'
+add "s/@RUNSH_US@/$us/g"
 
 redact() {
   # sed's own error text (e.g. "illegal byte sequence" on invalid bytes

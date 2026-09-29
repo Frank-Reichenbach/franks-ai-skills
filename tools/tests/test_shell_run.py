@@ -353,6 +353,12 @@ class RedactionTests(unittest.TestCase):
             ("KEY=abcd1234\\\nefgh5678\n", ("abcd1234", "efgh5678")),
             ("TOKEN=\\\nefgh5678\n", ("efgh5678",)),
             ('KEY="abcd1234\nefgh5678"\\\nijkl\n', ("efgh5678", "ijkl")),
+            # $'…' allows \' inside; '…' doesn't, so a $' is never read
+            # as a $ followed by a single-quoted fragment.
+            ("TOKEN=$'abcdefgh\nijkl\\' LEAKTAIL\nlast'\n", ("abcdefgh", "ijkl", "LEAKTAIL", "last")),
+            # Moving from one quote style to the next across lines.
+            ("KEY=\"abcd1234\nefgh\"'ijkl\nmnop'$'qrst\\'\nuvwx'\n", ("efgh", "ijkl", "mnop", "qrst", "uvwx")),
+            ('KEY=$"abcd efgh"\n', ("abcd", "efgh")),
         )
         for text, fragments in cases:
             with self.subTest(text=text):
@@ -373,6 +379,13 @@ class RedactionTests(unittest.TestCase):
             # A name inside a closed value doesn't open a quote.
             ('KEY="pass key=abcd1234efgh"\nnext line\n', "next line"),
             ("KEY=abcd1234\\\nefgh5678 visible\n", " visible"),
+            # A $'…' value closed after an escaped quote leaves the next
+            # line alone, and so do the other quote transitions.
+            ("TOKEN=$'abcd\\'efgh'\nvisible line\n", "visible line"),
+            ("KEY=\"abcd1234\nefgh\"'ijkl\nmnop'$'qrst\\'\nuvwx'\nafter\n", "after"),
+            ('KEY=$"abcd efgh"\nvisible line\n', "visible line"),
+            # A $ at the end of a value belongs to it.
+            ("KEY=abcd1234$ next\n", "KEY=[REDACTED] next"),
             # A quote outside a secret assignment starts nothing.
             ('say "open\nplain text\n', "plain text"),
         )
@@ -391,6 +404,24 @@ class RedactionTests(unittest.TestCase):
                 self.assertNotIn("abcd1234", result.stdout)
                 self.assertNotIn("efgh5678", result.stdout)
                 self.assertIn("done", result.stdout)
+
+    def test_many_values_on_one_line_take_linear_time(self):
+        # Regression: masking one value at a time rescanned the line from
+        # its start each time, so 1,600 values on one line took 4.5 s
+        # and doubling them took four times as long.
+        import time
+
+        start = time.monotonic()
+        stdout, _ = self.cat_through_wrapper("key=abcdefgh " * 3200 + "\n")
+        self.assertLess(time.monotonic() - start, 5)
+        self.assertNotIn("abcdefgh", stdout)
+
+    def test_marker_character_in_input_is_kept(self):
+        # redact() marks values with the control character US (\x1f); one
+        # already in the input comes out unchanged and ends no value.
+        stdout, _ = self.cat_through_wrapper("a\x1fb key=abcd\x1f<efgh>1234\n")
+        self.assertIn("a\x1fb key=[REDACTED]", stdout)
+        self.assertNotIn("efgh", stdout)
 
     def test_marker_in_input_does_not_unmask(self):
         # redact() marks values while it works on them; input that
