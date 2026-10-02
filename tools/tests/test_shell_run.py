@@ -16,18 +16,30 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 RUN_SH = REPO_ROOT / "skills" / "shell" / "scripts" / "run.sh"
 
+# Paths that reach bash go in with forward slashes: on Windows, str() of a
+# Path uses backslashes, which bash reads as escape characters inside a
+# command string. Git Bash accepts C:/... paths as they are.
+RUN_SH_ARG = RUN_SH.as_posix()
+
 
 def run_wrapper(args, cwd=None, env=None):
     full_env = dict(os.environ)
     if env:
         full_env.update(env)
     return subprocess.run(
-        ["bash", str(RUN_SH), *args],
+        ["bash", RUN_SH_ARG, *args],
         capture_output=True,
-        text=True,
+        # Explicit, not the platform default: on Windows that's the ANSI
+        # code page, not UTF-8.
+        encoding="utf-8",
         cwd=cwd,
         env=full_env,
     )
+
+
+def write_input(path, text):
+    # Bytes as given: write_text() on Windows turns "\n" into "\r\n".
+    path.write_bytes(text.encode("utf-8"))
 
 
 class QuotingAndExitStatusTests(unittest.TestCase):
@@ -86,11 +98,13 @@ class LargeOutputTests(unittest.TestCase):
         # was valid — 49 ASCII bytes + 'é' (2 bytes) is 51 bytes; a
         # 50-byte limit used to cut 'é' in half, producing invalid UTF-8
         # from valid input and crashing any text-mode consumer.
+        # printf, not an inner python3: on Windows that writes 'é' in the
+        # ANSI code page, which isn't UTF-8.
         result = run_wrapper(
-            ['python3 -c "import sys; sys.stdout.write(chr(65)*49 + chr(233))"'],
+            ["printf 'A%.0s' $(seq 1 49); printf '\\303\\251'"],
             env={"RUN_SH_MAX_OUTPUT_BYTES": "50"},
         )
-        # subprocess with text=True already decoded this — reaching here
+        # subprocess already decoded this as UTF-8 — reaching here
         # at all (rather than raising UnicodeDecodeError) is part of what
         # this test verifies. It should also back off to 49, not 50.
         self.assertIn("showing first 49", result.stdout)
@@ -101,10 +115,7 @@ class LargeOutputTests(unittest.TestCase):
         # ASCII bytes is 51 bytes; a 50-byte limit used to cut off 'é''s
         # leading byte, leaving a dangling continuation byte.
         result = run_wrapper(
-            [
-                'python3 -c "import sys; '
-                'sys.stderr.write(chr(233) + chr(65)*49); sys.exit(1)"'
-            ],
+            ["{ printf '\\303\\251'; printf 'A%.0s' $(seq 1 49); } >&2; exit 1"],
             env={"RUN_SH_MAX_OUTPUT_BYTES": "50"},
         )
         self.assertEqual(result.returncode, 1)
@@ -132,7 +143,7 @@ class LargeOutputTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             marker = Path(tmp) / "side_effect.txt"
             result = run_wrapper(
-                [f'echo wrote > {marker} ; exit 7'],
+                [f'echo wrote > {marker.as_posix()} ; exit 7'],
                 env={"RUN_SH_MAX_OUTPUT_BYTES": "not-a-number"},
             )
             self.assertNotEqual(result.returncode, 0)
@@ -146,7 +157,7 @@ class LargeOutputTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             marker = Path(tmp) / "side_effect.txt"
             result = run_wrapper(
-                [f'echo wrote > {marker} ; exit 7'],
+                [f'echo wrote > {marker.as_posix()} ; exit 7'],
                 env={"RUN_SH_MAX_OUTPUT_BYTES": "08"},
             )
             self.assertNotEqual(result.returncode, 0)
@@ -259,8 +270,14 @@ class SecretPathCheckTests(unittest.TestCase):
         # match fail, so `cat .env #\xff` ran and printed the file.
         with tempfile.TemporaryDirectory() as tmp:
             (Path(tmp) / ".env").write_text("PASSWORD=FAKE_PW_5678\n")
+            # bash builds the argument: a Windows command line can't
+            # carry the raw byte 0xFF.
             result = subprocess.run(
-                ["bash", str(RUN_SH), b"cat .env #\xff"],
+                [
+                    "bash", "-c",
+                    "exec bash \"$1\" \"$(printf 'cat .env #\\377')\"",
+                    "bash", RUN_SH_ARG,
+                ],
                 capture_output=True,
                 cwd=tmp,
                 env={**os.environ, "LC_ALL": "en_US.UTF-8"},
@@ -325,10 +342,10 @@ class RedactionTests(unittest.TestCase):
         # file, so bash doesn't interpret the quotes in it.
         with tempfile.TemporaryDirectory() as tmp:
             f = Path(tmp) / "input.txt"
-            f.write_text(text)
+            write_input(f, text)
             return (
-                run_wrapper([f"cat {f}"]).stdout,
-                run_wrapper([f"cat {f} >&2"]).stderr,
+                run_wrapper([f"cat {f.as_posix()}"]).stdout,
+                run_wrapper([f"cat {f.as_posix()} >&2"]).stderr,
             )
 
     def test_quoted_values_are_redacted_completely(self):
@@ -478,8 +495,8 @@ class RedactionTests(unittest.TestCase):
     def test_quoted_value_is_fully_redacted(self):
         with tempfile.TemporaryDirectory() as tmp:
             f = Path(tmp) / "quoted.txt"
-            f.write_text('TOKEN="FAKE_QUOTED_VALUE_123456"\n')
-            result = run_wrapper([f"cat {f}"])
+            write_input(f, 'TOKEN="FAKE_QUOTED_VALUE_123456"\n')
+            result = run_wrapper([f"cat {f.as_posix()}"])
             self.assertNotIn("FAKE_QUOTED_VALUE_123456", result.stdout)
             self.assertIn("REDACTED", result.stdout)
 
@@ -497,9 +514,9 @@ class RedactionTests(unittest.TestCase):
         # minimum length and leaking the (shortened) prefix.
         with tempfile.TemporaryDirectory() as tmp:
             f = Path(tmp) / "secret.txt"
-            f.write_text("API_KEY=FAKESECRET123456789\n")
+            write_input(f, "API_KEY=FAKESECRET123456789\n")
             result = run_wrapper(
-                [f"cat {f}"],
+                [f"cat {f.as_posix()}"],
                 env={"RUN_SH_MAX_OUTPUT_BYTES": "12"},
             )
             self.assertNotIn("FAKESECRET123456789", result.stdout)
