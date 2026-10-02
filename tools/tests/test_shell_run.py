@@ -8,6 +8,7 @@ skills/shell/SKILL.md for what this wrapper does and does not guarantee.
 """
 
 import os
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -20,6 +21,12 @@ RUN_SH = REPO_ROOT / "skills" / "shell" / "scripts" / "run.sh"
 # Path uses backslashes, which bash reads as escape characters inside a
 # command string. Git Bash accepts C:/... paths as they are.
 RUN_SH_ARG = RUN_SH.as_posix()
+
+# What run.sh runs besides bash builtins; it refuses to start without
+# them. "touch" is for the tests' own side-effect markers.
+WRAPPER_TOOLS = (
+    "iconv", "awk", "sed", "tr", "head", "tail", "mktemp", "wc", "cat", "rm",
+)
 
 
 def run_wrapper(args, cwd=None, env=None):
@@ -40,6 +47,23 @@ def run_wrapper(args, cwd=None, env=None):
 def write_input(path, text):
     # Bytes as given: write_text() on Windows turns "\n" into "\r\n".
     path.write_bytes(text.encode("utf-8"))
+
+
+def path_with_only(tools, directory):
+    """Fills directory with one forwarding script per tool, plus bash and
+    touch, and returns it for use as the whole PATH — so a test can leave
+    a tool out even where it shares a directory such as /usr/bin with the
+    others."""
+    for tool in (*tools, "bash", "touch"):
+        target = shutil.which(tool)
+        if target is None:
+            raise unittest.SkipTest(f"{tool} not installed")
+        script = Path(directory) / tool
+        script.write_bytes(
+            f"#!/bin/sh\nexec '{Path(target).as_posix()}' \"$@\"\n".encode()
+        )
+        script.chmod(0o755)
+    return str(directory)
 
 
 class QuotingAndExitStatusTests(unittest.TestCase):
@@ -73,6 +97,69 @@ class QuotingAndExitStatusTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 1)
         self.assertIn("REAL_STDERR_DIAGNOSTIC_XYZ", result.stderr)
+
+
+class RequirementTests(unittest.TestCase):
+    INSTALL_HINT = "winget install --id mlocati.GetText --exact --source winget"
+
+    def run_without(self, missing, command, cwd):
+        shim = Path(cwd) / "bin"
+        shim.mkdir()
+        tools = [tool for tool in WRAPPER_TOOLS if tool not in missing]
+        return subprocess.run(
+            [shutil.which("bash"), RUN_SH_ARG, command],
+            capture_output=True,
+            encoding="utf-8",
+            cwd=cwd,
+            env={**os.environ, "PATH": path_with_only(tools, shim)},
+        )
+
+    def test_missing_iconv_stops_before_the_command_runs(self):
+        # Regression: Git Bash on Windows has no iconv. The UTF-8 check
+        # failed on every stream, so the command ran and both streams
+        # were withheld as "not valid UTF-8".
+        with tempfile.TemporaryDirectory() as tmp:
+            marker = Path(tmp) / "marker"
+            result = self.run_without(
+                {"iconv"}, f"touch {marker.as_posix()}", tmp
+            )
+            self.assertEqual(result.returncode, 4, result.stderr)
+            self.assertIn("iconv", result.stderr)
+            self.assertNotIn("withheld", result.stdout + result.stderr)
+            self.assertFalse(marker.exists(), "command should not have run")
+            if os.name == "nt":
+                self.assertIn(self.INSTALL_HINT, result.stderr)
+            else:
+                self.assertNotIn("winget", result.stderr)
+
+    def test_missing_redact_awk_stops_before_the_command_runs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            lone_copy = Path(tmp) / "run.sh"
+            shutil.copy(RUN_SH, lone_copy)
+            marker = Path(tmp) / "marker"
+            result = subprocess.run(
+                ["bash", lone_copy.as_posix(), f"touch {marker.as_posix()}"],
+                capture_output=True,
+                encoding="utf-8",
+            )
+            self.assertEqual(result.returncode, 4, result.stderr)
+            self.assertIn("redact.awk", result.stderr)
+            self.assertFalse(marker.exists(), "command should not have run")
+
+    @unittest.skipUnless(
+        os.name == "nt", "a backslash separates path parts only on Windows"
+    )
+    def test_backslash_script_path_finds_redact_awk(self):
+        # Regression: run.sh cut $0 at the last "/" to find redact.awk,
+        # so a C:\...\run.sh path left it looking in the current
+        # directory, and every stream was withheld.
+        result = subprocess.run(
+            ["bash", str(RUN_SH), "echo hello"],
+            capture_output=True,
+            encoding="utf-8",
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("\nhello\n", result.stdout)
 
 
 class LargeOutputTests(unittest.TestCase):

@@ -39,11 +39,36 @@ shown above** — left unquoted, a plugin installed under a path
 containing a space breaks into multiple words and fails with "command
 not found."
 
-Requires `bash`, `sed`, `awk`, `iconv`, `tr`, `head`, and `tail` — all
-present by default on macOS and the Linux CI images this plugin has
-been tested against, with BSD awk, mawk, and gawk (per
-`docs/security.md`'s rule to document required external binaries). No
-network access is needed.
+Requires `bash` with `sed`, `awk`, `iconv`, `tr`, `head`, `tail`,
+`mktemp`, `wc`, `cat`, and `rm` — all present by default on macOS and
+the Linux CI images this plugin has been tested against, with BSD awk,
+mawk, and gawk (per `docs/security.md`'s rule to document required
+external binaries). On Windows it runs in Git Bash, the bash Claude
+Code's shell tool uses there and the only Windows bash it has been
+tested with; Git Bash ships without `iconv`. No network access is
+needed.
+
+### When a requirement is missing
+
+`run.sh` checks for these tools and its own `redact.awk` before running
+anything. If one is missing, it runs nothing, exits with status 4, and
+names what is missing. Tell the user what is missing and how to install
+it, then wait: don't look for another copy or a substitute, and don't
+run the command without the wrapper unless the user approves that. For
+`iconv` in Git Bash, the wrapper prints the install command:
+
+```
+winget install --id mlocati.GetText --exact --source winget
+```
+
+It installs GNU libiconv for the current user and adds it to the user
+`PATH`. A session that is already running keeps its old `PATH`, so the
+user restarts it from a new terminal afterwards (in Claude Code,
+`claude --continue` resumes the conversation).
+
+With no `bash` at all, the wrapper can't run — Claude Code on Windows
+can run with PowerShell alone (its settings schema: hooks run in
+"PowerShell on Windows without Git Bash"). Say so and wait, as above.
 
 ## Read-only vs. everything else
 

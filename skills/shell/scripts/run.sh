@@ -108,10 +108,29 @@ fi
 # (bearer tokens, sk- keys) are matched per line by sed afterwards, and
 # match complete values, including base64-shaped ones (+, /, = are
 # common in tokens). Best-effort: an unusual format can still slip past.
+# On Windows, $0 can be a C:\...\run.sh path; cut at either separator.
 case $0 in
-  */*) redact_awk=${0%/*}/redact.awk ;;
+  */* | *\\*) redact_awk=${0%[/\\]*}/redact.awk ;;
   *) redact_awk=redact.awk ;;
 esac
+
+# Everything the wrapper runs besides bash builtins, checked before the
+# command runs. A missing one used to show up only afterwards: the UTF-8
+# check and redact() can't tell a missing tool from bad input, so the
+# command ran and both streams were withheld as "not valid UTF-8". Git
+# Bash on Windows ships without iconv.
+missing=()
+for tool in iconv awk sed tr head tail mktemp wc cat rm; do
+  command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
+done
+[[ -r "$redact_awk" ]] || missing+=("$redact_awk")
+if [[ ${#missing[@]} -gt 0 ]]; then
+  echo "run.sh: required, not found: ${missing[*]} — the command was not run." >&2
+  if [[ " ${missing[*]} " == *" iconv "* && ${OSTYPE:-} == msys* ]]; then
+    echo "run.sh: in Git Bash, install iconv with: winget install --id mlocati.GetText --exact --source winget — then restart the session from a new terminal, which picks up the new PATH." >&2
+  fi
+  exit 4
+fi
 
 # $1: 1 if the input doesn't end in a newline, which awk can't see.
 redact() {
