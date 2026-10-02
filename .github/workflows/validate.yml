@@ -46,3 +46,44 @@ jobs:
             echo "== $("$awk" -W version 2>&1 | head -n 1)"
             PATH="$shim:$PATH" python3 -m unittest tools.tests.test_shell_run
           done
+
+  # run.sh also runs in Git Bash on Windows, the bash Claude Code uses
+  # there. Git for Windows ships without iconv, so this job installs the
+  # GNU libiconv build that `winget install --id mlocati.GetText` does,
+  # from the same release's zip, pinned by checksum.
+  shell-windows:
+    runs-on: windows-2025
+    defaults:
+      run:
+        shell: bash
+    env:
+      # The test runner's own console output; the tests set their
+      # encodings themselves.
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Check that the scripts are checked out with LF line endings
+        run: |
+          if grep -l $'\r' skills/shell/scripts/*; then
+            echo "CR line endings in the files above" >&2
+            exit 1
+          fi
+
+      - name: Install iconv
+        run: |
+          tmp=$(cygpath -u "$RUNNER_TEMP")
+          curl -fsSL -o "$tmp/gettext-iconv.zip" \
+            https://github.com/mlocati/gettext-iconv-windows/releases/download/v1.0-v1.19/gettext1.0-iconv1.19-shared-64.zip
+          echo "c2f195fc4ed3df4070fb08ff88c2f724afd1eed4e28f859efae1000bb7ba1152  $tmp/gettext-iconv.zip" | sha256sum -c -
+          unzip -q "$tmp/gettext-iconv.zip" -d "$tmp/gettext-iconv"
+          cygpath -w "$tmp/gettext-iconv/bin" >> "$GITHUB_PATH"
+
+      - name: Test the shell wrapper in Git Bash
+        run: |
+          command -v iconv
+          python -m unittest tools.tests.test_shell_run
