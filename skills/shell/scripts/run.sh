@@ -114,13 +114,14 @@ case $0 in
   *) redact_awk=redact.awk ;;
 esac
 
-# Everything the wrapper runs besides bash builtins, checked before the
-# command runs. A missing one used to show up only afterwards: the UTF-8
-# check and redact() can't tell a missing tool from bad input, so the
-# command ran and both streams were withheld as "not valid UTF-8". Git
-# Bash on Windows ships without iconv.
+# Everything the wrapper runs besides bash builtins, bash itself included
+# (for `bash -c`), checked before the command runs. A missing one used to
+# show up only afterwards: the UTF-8 check and redact() can't tell a
+# missing tool from bad input, so the command ran and both streams were
+# withheld as "not valid UTF-8". Git Bash of Git for Windows 2.53.0
+# ships without iconv.
 missing=()
-for tool in iconv awk sed tr head tail mktemp wc cat rm; do
+for tool in bash iconv awk sed tr head tail mktemp wc cat rm; do
   command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
 done
 [[ -r "$redact_awk" ]] || missing+=("$redact_awk")
