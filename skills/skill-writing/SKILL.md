@@ -13,7 +13,8 @@ progressive disclosure, cross-skill boundaries. Not for the prose quality
 of content outside a skill's own authoring conventions — see
 `technical-writing` for that. Not for the commit/PR that adds or changes
 a skill — see `git-flow` for that; this skill decides what the content
-should say, `git-flow` decides how to commit and land it.
+should say, including the check that runs before that PR is opened
+(see "Output"), and `git-flow` decides how to commit and land it.
 
 Stop and ask rather than guessing when: it's unclear whether a change
 is an edit to an existing skill, a new skill, or a new plugin entry
@@ -220,6 +221,13 @@ people as fictional in the file's header comment.
   repo, also the `marketplace.json` entry, `routing.yaml` and
   `behavior.yaml`, a `behavior-<scenario>.yaml` per decision point, and
   a passing `tools/validate.sh`.
+- **Before a skill change's PR is opened:** a check of the change
+  against the skill it edits, with what it finds fixed first:
+  - a list of cases the change adds to or alters (buckets, outcomes,
+    choices) matches every place in the skill that repeats it,
+    "Output" included;
+  - every new or changed eval fixture meets the fixture rule in
+    "Evals".
 - **Review:** findings against that checklist and the rules above, each
   naming the line it concerns.
 
