@@ -77,11 +77,11 @@ the same as any other technical writing.
    to — not necessarily this one, if the friction came from using a
    *different* installed plugin's skill. A drop has no target. A
    proposal's issue goes in the same repository its change targets.
-   - **If the target repository can't be determined, or `gh`/git access
-     to it isn't available, fall back to proposal-only for that item**:
-     describe the change or issue content and say plainly why it can't
-     be acted on, rather than guessing a repository or silently dropping
-     the finding.
+   - **If the target repository can't be determined, or `gh` access to
+     it isn't available, so no issue can be created there, fall back to
+     proposal-only for that item**: describe the change or issue content
+     and say plainly why it can't be acted on, rather than guessing a
+     repository or silently dropping the finding.
    - **Check each proposal against its target before showing it.** Read
      the target repository's open issues and open PRs, the comments on
      those that touch the proposal's topic, and the files the proposal
@@ -92,8 +92,13 @@ the same as any other technical writing.
      instead of a new issue. If one covers part of it, narrow the
      proposal to the rest and link that issue or PR. Name in the output
      what was checked: issue and PR numbers, branch and commit. If the
-     issues, PRs or the branch can't be read, say so; the proposal is
-     then unchecked, and is shown as such.
+     issues, PRs or the branch can't be read, say what failed and what
+     would fix it, and wait (see `shell`, "When access is missing"). If
+     it stays unreadable but an issue can still be created there — the
+     default branch can't be fetched, but `gh` works — the proposal is
+     unchecked: show it as such, with its per-item choice. If `gh`
+     can't reach the target either, the item falls back to
+     proposal-only, as above.
 4. **Show concrete content before asking.** For each proposal, show the
    actual content before asking what to do with it: for a skill-update,
    new-skill, or project-config, the issue's title and body — what
@@ -123,15 +128,14 @@ the same as any other technical writing.
 6. **Clear the reviewed memory entries once acknowledged.** After the
    per-item choices, list every memory entry this retro reviewed with
    where its content went: the issue or the comment (and PR, if
-   implemented), a
-   proposal-only item with why no issue could be created, a proposal
-   the user rejected, or dropped with its reason. Then ask the user to
-   acknowledge the list, and delete only after they have — every entry
-   they acknowledge, whatever its bucket and whether or not it was
-   implemented. An entry they want to keep stays. Never delete a memory
-   entry without that acknowledgment. Memory doesn't keep a second copy
-   of a rule that now lives elsewhere, and a dropped entry has nothing
-   left to keep.
+   implemented), a proposal-only item with why no issue could be
+   created, a proposal the user rejected, or dropped with its reason.
+   Then ask the user to acknowledge the list, and delete only after they
+   have — every entry they acknowledge, whatever its bucket and whether
+   or not it was implemented. An entry they want to keep stays. Never
+   delete a memory entry without that acknowledgment. Memory doesn't
+   keep a second copy of a rule that now lives elsewhere, and a dropped
+   entry has nothing left to keep.
 
 ## Output
 
@@ -140,5 +144,5 @@ bug-issue / drop), each with its concrete content and its target
 repository named explicitly, and what it was checked against there (or
 that it is unchecked). Then each proposal's issue, comment and PR
 links, its rejection, or why it stayed proposal-only, and the memory
-entries listed for acknowledgment, each with where its content went and whether it
-was deleted.
+entries listed for acknowledgment, each with where its content went
+and whether it was deleted.

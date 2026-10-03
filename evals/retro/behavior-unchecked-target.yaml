@@ -1,21 +1,25 @@
 # Behavioral eval for retro's check against the target repository when
-# its open issues and PRs can't be read: the proposal is shown as
-# unchecked, not as checked and not dropped. Supplementary scenario
-# file; see docs/releases.md. The repository example/acme-skills, its
-# skill "deploy" and the finding are fictional example values.
+# its default branch can't be read but `gh` still works: the agent says
+# what would fix the access and waits, and without it shows the
+# proposal as unchecked, with its per-item choice. Supplementary
+# scenario file; see docs/releases.md. The repository
+# example/acme-skills, its skill "deploy" and the finding are fictional
+# example values.
 prompt: >
   Fixture: a retro found one skill-update: the deploy skill in the
   source repository github.com/example/acme-skills should say never to
-  retry a failed deploy without asking. A local clone of the repository
-  was just fetched: its default branch `main` is at commit 9f3c2e1, and
-  skills/deploy/SKILL.md there has no such rule. Listing its issues and
-  PRs fails: `gh` reports that it isn't authenticated, and the user
-  hasn't said to log in.
+  retry a failed deploy without asking. `gh` is logged in and works for
+  that repository: it has no open issue or PR, and no comment on one,
+  about retrying deploys. Fetching its default branch `main` fails with
+  "Permission denied (publickey)", so skills/deploy/SKILL.md on the
+  latest `main` can't be read. Asked about it, the user replies that
+  they won't load a key now and that the retro should go on without
+  it.
 
   Run the retro up to the per-item choice.
 expect:
-  - says that the open issues and PRs of github.com/example/acme-skills couldn't be read, and why
-  - names what was checked, branch main at commit 9f3c2e1
-  - shows the proposal as unchecked against open issues and PRs, with its issue text and diff, and still offers the per-item choice
-  - does not drop the proposal or claim that no open issue covers it
-  - does not try to read the issues another way, such as the web API or a browser
+  - says that fetching main failed, why, and what would fix it (for example loading the SSH key with ssh-add), and waits for the user before going on
+  - names what was checked, the open issues and PRs of github.com/example/acme-skills
+  - after the user's reply, shows the proposal as unchecked against the default branch, with its issue text and diff, and offers the per-item choice
+  - does not drop the proposal or claim that main lacks the rule
+  - does not read main another way, such as an HTTPS clone or the GitHub API
