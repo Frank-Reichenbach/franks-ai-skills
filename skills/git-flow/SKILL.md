@@ -1,18 +1,18 @@
 ---
 name: git-flow
-description: "Establishes default branching, commit message, and pull-request conventions for a project that doesn't already have its own: Conventional Commits, feature/fix/chore/docs branch prefixes, PR-before-merge, squash-merge by default, what a PR description has to cover, and attribution trailers for AI models and people. Merging always requires an explicit request or human approval, never automatic just because CI is green, and an issue is created only after its text is approved. Use when starting feature work, committing, opening or merging a pull request, or creating an issue."
+description: "Establishes default branching, commit message, and pull-request conventions for a project that doesn't already have its own: Conventional Commits, feature/fix/chore/docs branch prefixes, PR-before-merge, squash-merge by default, what a PR description has to cover, and attribution trailers for AI models and people. Merging always requires an explicit request or human approval, never automatic just because CI is green. Only a new issue needs its text approved before it's created; PRs, comments and issue edits the task calls for are published without asking first, and every issue, PR and comment published is reported with its link. Use when starting feature work, committing, opening or merging a pull request, creating or editing an issue, or commenting on an issue or pull request."
 ---
 
 # Git Flow
 
 ## Scope
 
-Governs the mechanics of branching, committing, merging, and creating
-issues: when to branch, how to name it, commit message format, when to
-open a PR, when (and whether) to merge it, and when an issue may be
-created. These are defaults for a project that doesn't
-already have its own established conventions — an existing project's own
-git conventions always take precedence.
+Governs the mechanics of branching, committing, merging, and publishing
+issues, PRs and comments: when to branch, how to name it, commit
+message format, when to open a PR, when (and whether) to merge it, and
+which publishing needs approval first. These are defaults for a project
+that doesn't already have its own established conventions — an existing
+project's own git conventions always take precedence.
 
 Not for the prose quality of a commit message or PR description's actual
 wording — see `technical-writing` for that. The two commonly apply
@@ -187,15 +187,30 @@ trailers as the final block.
 
 ## Issues
 
-- **Creating an issue requires approval of its text.** Before creating
-  one, show the complete title and body exactly as they will be filed
-  and ask for approval; create it only after that. Approving the idea
+A PR that resolves an issue closes it from its description:
+`Closes #<n>` in the summary, not in the trailer block.
+
+## Publishing issues, PRs and comments
+
+Creating or changing an issue, a PR or a comment publishes it, and it
+may be cached or indexed even after deletion.
+
+- **Only a new issue needs approval of its text.** Before creating one,
+  show the complete title and body exactly as they will be filed and
+  ask for approval; create it only after that. Approving the idea
   ("file an issue for X") isn't approving a text that didn't exist yet,
   and a change to the text after approval needs a new approval.
-  Creating an issue publishes it, and it may be cached or indexed even
-  after deletion.
-- A PR that resolves an issue closes it from its description:
-  `Closes #<n>` in the summary, not in the trailer block.
+- **Everything else is published without asking first, once the task
+  calls for it:** opening a PR, changing its title or description,
+  posting or editing a comment on an issue or PR, and editing an
+  existing issue. None of these happen on the agent's own initiative: a
+  fix pushed to a PR's branch doesn't call for a comment about it unless
+  the task asks for one.
+- **Report every link.** Each issue, PR and comment created or updated
+  is reported in the chat with its link, so the user sees what was
+  published and where.
+- Merging still needs an explicit request or human approval — see "Pull
+  requests".
 
 ## Stop and ask
 
@@ -208,15 +223,16 @@ trailers as the final block.
   reviewer before writing a review trailer.
 - It's uncertain which of two models is the newer release — ask; never
   guess a model name into a trailer.
-- An issue is about to be created — see "Issues": its text needs
-  approval first.
+- A new issue is about to be created — see "Publishing issues, PRs and
+  comments": its text needs approval first.
 
 ## Output
 
 A branch, commits, and a PR that follow these rules. For a PR, a title
 and a description ready to paste. For an issue, its title and body for
-approval, then the issue. For a check of existing work, the rule each
-deviation breaks.
+approval, then the issue. For each issue, PR and comment created or
+updated, its link in the chat. For a check of existing work, the rule
+each deviation breaks.
 
 ## When a project has its own conventions
 

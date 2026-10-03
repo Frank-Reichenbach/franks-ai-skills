@@ -10,3 +10,5 @@ cases:
     expect_skill: null
   - prompt: "Create a new skill for reviewing pull requests"
     expect_skill: skill-writing
+  - prompt: "Post the benchmark results as a comment on PR #42"
+    expect_skill: git-flow

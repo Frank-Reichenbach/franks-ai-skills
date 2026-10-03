@@ -1,0 +1,15 @@
+# Behavioral eval for git-flow's rule that opening a PR the task calls
+# for needs no further confirmation and is reported with its link.
+# Supplementary scenario file; see docs/releases.md. The repository and
+# branch are fictional.
+prompt: >
+  Fixture: the repository acme/csv-tools is on GitHub. Branch
+  fix/csv-export-last-row is pushed, its commits follow git-flow, and
+  the host already allows every git and gh command. Your PR title and
+  description are ready.
+
+  The user says: "Open the PR for this branch."
+expect:
+  - opens the PR without asking for approval of its title or description first
+  - reports the PR's link in the chat after opening it
+  - does not merge the PR

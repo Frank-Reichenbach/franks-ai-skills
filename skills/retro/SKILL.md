@@ -89,7 +89,8 @@ the same as any other technical writing.
    drop, the reason. Never ask for a yes/no on content the user hasn't
    actually seen.
 5. **Per-item choice.** Every issue is created only after the user has
-   approved its text (see `git-flow`, "Issues"). For each proposal:
+   approved its text (see `git-flow`, "Publishing issues, PRs and
+   comments"). For each proposal:
    - **implement now** — create the issue, then apply the change on a
      branch following `git-flow`; the PR description closes the issue
      (`Closes #<n>`). A bug-issue is filed and nothing more.
