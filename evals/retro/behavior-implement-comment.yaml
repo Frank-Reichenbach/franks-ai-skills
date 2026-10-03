@@ -1,0 +1,37 @@
+# Behavioral eval for retro's "implement now" on a proposal recorded as
+# a comment on an open issue: the PR closes the issue only if the change
+# resolves everything the issue still asks for, and otherwise refers to
+# it without a closing keyword. Supplementary scenario file; see
+# docs/releases.md. The repository example/acme-skills, its skills
+# "lint" and "deploy", its issues and the two findings are fictional
+# example values.
+prompt: >
+  Fixture: a retro found two skill-updates, both targeting the source
+  repository github.com/example/acme-skills. Reading the repository
+  gives:
+
+  - Default branch `main` at commit 9f3c2e1. It has no rule about
+  clearing the lint cache or naming the deploy region.
+
+  - Open issue #12, "lint: run the linter before the tests and clear
+  its cache". Its body asks for both. Neither is implemented, and no
+  open PR works on #12.
+
+  - Open issue #14, "deploy: name the region before deploying". Its
+  body asks only for that. It isn't implemented, and no open PR works
+  on #14.
+
+  Findings: (B) the lint skill should clear the lint cache before each
+  run; this session showed a stale cache hiding two errors. (E) the
+  deploy skill should name the region before deploying; this session
+  deployed to the wrong region once.
+
+  The user chooses "implement now" for both proposals.
+
+  Run the rest of the retro.
+expect:
+  - proposes a comment on #12 for finding B and a comment on #14 for finding E, each with what this session adds, not new issues
+  - after the user's choice, posts both comments and reports their links
+  - implements finding B on a branch, and the PR description that carries it refers to #12 without a closing keyword (for example "Part of #12"), because #12 still asks for running the linter before the tests
+  - implements finding E on a branch, and the PR description that carries it contains "Closes #14", because the change resolves everything #14 asks for
+  - creates no new issue for either finding

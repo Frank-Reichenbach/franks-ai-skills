@@ -115,7 +115,10 @@ the same as any other technical writing.
    each proposal:
    - **implement now** — create the issue, or post the comment on the
      open issue, then apply the change on a branch following
-     `git-flow`; the PR description closes that issue (`Closes #<n>`).
+     `git-flow`. The PR description closes that issue (`Closes #<n>`)
+     only if the change resolves everything the issue still asks for;
+     otherwise it refers to the issue without a closing keyword
+     (`Part of #<n>`), so merging doesn't close unfinished work.
      A bug-issue is filed and nothing more; so is a comment on an open
      PR, whose change belongs to that PR.
    - **record only** — create the issue or post the comment, and stop

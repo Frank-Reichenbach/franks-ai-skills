@@ -21,6 +21,9 @@ prompt: >
   skills/deploy/SKILL.md that the agent names the environment before a
   deploy. It doesn't cover the region.
 
+  - `main` has no rule about clearing the lint cache, naming the
+  target environment or naming the region.
+
   - No open issue, PR or comment mentions log levels, and `main` has
   no rule about them.
 
