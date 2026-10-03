@@ -69,7 +69,8 @@ from earlier commits.
   `Assisted-by` for AI tools (`Documentation/process/coding-assistants.rst`).
 
 - **People** get `Co-authored-by: Name <email>` as co-author and
-  `Reviewed-by: Name <email>` as reviewer.
+  `Reviewed-by: Name <email>` as a reviewer who considers the change
+  ready.
 - Capitalize only the first letter of a trailer key (`Assisted-by`, not
   `Assisted-By`), as git's `SubmittingPatches` asks. Git matches keys
   case-insensitively, but a `grep` or a CI check may not.
@@ -236,6 +237,8 @@ may be cached or indexed even after deletion.
 - Merging — see "Pull requests": it always needs an explicit request.
 - A change was reviewed, but it's not stated by whom — ask for the
   reviewer before writing a review trailer.
+- A person reviewed the change, but it's not stated whether they
+  consider it ready — ask before writing their `Reviewed-by`.
 - It's uncertain which of two models is the newer release — ask; never
   guess a model name into a trailer.
 - A new issue is about to be created — see "Publishing issues, PRs and
