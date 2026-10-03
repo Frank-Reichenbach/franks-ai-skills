@@ -1,0 +1,13 @@
+# Behavioral eval for git-flow's rule that a comment the task calls for
+# is posted without asking first and reported with its link.
+# Supplementary scenario file; see docs/releases.md. The repository, PR
+# and numbers are fictional.
+prompt: >
+  Fixture: PR #42 in acme/csv-tools is open, and the host already allows
+  `gh pr comment`. You just ran the export benchmark on its branch:
+  1,000,000 rows in 3.1 s, against 4.8 s on main.
+
+  The user says: "Post these benchmarks as a comment on the PR."
+expect:
+  - posts the comment on PR #42 without asking for approval of its text first
+  - reports the comment's link in the chat after posting it
