@@ -27,10 +27,11 @@ RUN_SH_ARG = RUN_SH.as_posix()
 # bash.exe (as on GitHub's Windows runners).
 BASH = shutil.which("bash") or "bash"
 
-# What run.sh runs besides bash builtins; it refuses to start without
-# them. "touch" is for the tests' own side-effect markers.
+# What run.sh runs besides bash builtins, bash itself included; it
+# refuses to start without them.
 WRAPPER_TOOLS = (
-    "iconv", "awk", "sed", "tr", "head", "tail", "mktemp", "wc", "cat", "rm",
+    "bash", "iconv", "awk", "sed", "tr", "head", "tail", "mktemp", "wc",
+    "cat", "rm",
 )
 
 
@@ -49,17 +50,31 @@ def run_wrapper(args, cwd=None, env=None):
     )
 
 
+def utf8_locale():
+    """A UTF-8 locale this machine has installed, or None."""
+    try:
+        names = subprocess.run(
+            ["locale", "-a"], capture_output=True, encoding="utf-8"
+        ).stdout.split()
+    except OSError:
+        return None
+    for name in ("C.UTF-8", "C.utf8", "en_US.UTF-8", "en_US.utf8"):
+        if name in names:
+            return name
+    return None
+
+
 def write_input(path, text):
     # Bytes as given: write_text() on Windows turns "\n" into "\r\n".
     path.write_bytes(text.encode("utf-8"))
 
 
 def path_with_only(tools, directory):
-    """Fills directory with one forwarding script per tool, plus bash and
-    touch, and returns it for use as the whole PATH — so a test can leave
-    a tool out even where it shares a directory such as /usr/bin with the
-    others."""
-    for tool in (*tools, "bash", "touch"):
+    """Fills directory with one forwarding script per tool, plus touch for
+    the tests' side-effect markers, and returns it for use as the whole
+    PATH — so a test can leave a tool out even where it shares a directory
+    such as /usr/bin with the others."""
+    for tool in (*tools, "touch"):
         target = shutil.which(tool)
         if target is None:
             raise unittest.SkipTest(f"{tool} not installed")
@@ -129,13 +144,27 @@ class RequirementTests(unittest.TestCase):
                 {"iconv"}, f"touch {marker.as_posix()}", tmp
             )
             self.assertEqual(result.returncode, 4, result.stderr)
-            self.assertIn("iconv", result.stderr)
+            self.assertIn(
+                "run.sh: required, not found: iconv — the command was not run.\n",
+                result.stderr,
+            )
             self.assertNotIn("withheld", result.stdout + result.stderr)
             self.assertFalse(marker.exists(), "command should not have run")
             if os.name == "nt":
                 self.assertIn(self.INSTALL_HINT, result.stderr)
             else:
                 self.assertNotIn("winget", result.stderr)
+
+    def test_any_missing_tool_stops_before_the_command_runs(self):
+        for tool in WRAPPER_TOOLS:
+            with self.subTest(tool=tool), tempfile.TemporaryDirectory() as tmp:
+                marker = Path(tmp) / "marker"
+                result = self.run_without(
+                    {tool}, f"touch {marker.as_posix()}", tmp
+                )
+                self.assertEqual(result.returncode, 4, result.stderr)
+                self.assertIn(f"required, not found: {tool} —", result.stderr)
+                self.assertFalse(marker.exists(), "command should not have run")
 
     def test_missing_redact_awk_stops_before_the_command_runs(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -357,22 +386,25 @@ class SecretPathCheckTests(unittest.TestCase):
                 # The command text itself never appears in the diagnostic.
                 self.assertNotIn(cmd, result.stderr)
 
+    @unittest.skipIf(
+        os.name == "nt",
+        "Git Bash's regex matches across an invalid byte in every locale,"
+        " so the regression can't occur there",
+    )
     def test_invalid_utf8_does_not_bypass_the_check(self):
         # Regression: in a UTF-8 locale an invalid byte made the regex
-        # match fail, so `cat .env #\xff` ran and printed the file.
+        # match fail, so `cat .env #\xff` ran and printed the file. In a
+        # non-UTF-8 locale every byte is valid and the test proves nothing.
+        locale_name = utf8_locale()
+        if locale_name is None:
+            self.skipTest("no UTF-8 locale installed")
         with tempfile.TemporaryDirectory() as tmp:
             (Path(tmp) / ".env").write_text("PASSWORD=FAKE_PW_5678\n")
-            # bash builds the argument: a Windows command line can't
-            # carry the raw byte 0xFF.
             result = subprocess.run(
-                [
-                    BASH, "-c",
-                    "exec bash \"$1\" \"$(printf 'cat .env #\\377')\"",
-                    "bash", RUN_SH_ARG,
-                ],
+                [BASH, RUN_SH_ARG, b"cat .env #\xff"],
                 capture_output=True,
                 cwd=tmp,
-                env={**os.environ, "LC_ALL": "en_US.UTF-8"},
+                env={**os.environ, "LC_ALL": locale_name},
             )
             self.assertEqual(result.returncode, 3)
             self.assertNotIn(b"FAKE_PW_5678", result.stdout + result.stderr)
