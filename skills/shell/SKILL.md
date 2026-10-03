@@ -46,8 +46,7 @@ mawk, and gawk (per `docs/security.md`'s rule to document required
 external binaries). On Windows it runs in Git Bash, the bash Claude
 Code's shell tool uses there and the only Windows bash it has been
 tested with. Not every Git Bash has `iconv`: Git for Windows 2.53.0
-ships without it, while the build on GitHub's `windows-2025` runner
-includes it. No network access is needed.
+ships without it. No network access is needed.
 
 ### When a requirement is missing
 

@@ -48,9 +48,10 @@ jobs:
           done
 
   # run.sh also runs in Git Bash on Windows, the bash Claude Code uses
-  # there. Git for Windows ships without iconv, so this job installs the
-  # GNU libiconv build that `winget install --id mlocati.GetText` does,
-  # from the same release's zip, pinned by checksum. The runner's Git for
+  # there. Not every Git for Windows ships iconv (2.53.0 doesn't), so the
+  # job tests with the GNU libiconv build that
+  # `winget install --id mlocati.GetText` installs, from the same
+  # release's zip, pinned by checksum. The runner's Git for
   # Windows (2.55.0 at the time of writing) reports $OSTYPE "cygwin";
   # Git Bash builds reporting "msys", such as 2.53.0, aren't covered here.
   shell-windows:
