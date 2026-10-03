@@ -90,5 +90,6 @@ jobs:
         run: |
           export PATH="$ICONV_DIR:$PATH"
           test "$(command -v iconv)" = "$ICONV_DIR/iconv"
+          git --version
           python -c "import shutil, subprocess; b = shutil.which('bash'); print('tests start', b, 'OSTYPE=' + subprocess.run([b, '-c', 'echo \$OSTYPE'], capture_output=True, text=True).stdout.strip())"
           python -m unittest tools.tests.test_shell_run
