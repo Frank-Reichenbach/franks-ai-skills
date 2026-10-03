@@ -22,6 +22,11 @@ RUN_SH = REPO_ROOT / "skills" / "shell" / "scripts" / "run.sh"
 # command string. Git Bash accepts C:/... paths as they are.
 RUN_SH_ARG = RUN_SH.as_posix()
 
+# The bash a PATH lookup finds. Starting "bash" by name doesn't do that on
+# Windows: the search there tries System32 first, where WSL puts its own
+# bash.exe (as on GitHub's Windows runners).
+BASH = shutil.which("bash") or "bash"
+
 # What run.sh runs besides bash builtins; it refuses to start without
 # them. "touch" is for the tests' own side-effect markers.
 WRAPPER_TOOLS = (
@@ -34,7 +39,7 @@ def run_wrapper(args, cwd=None, env=None):
     if env:
         full_env.update(env)
     return subprocess.run(
-        ["bash", RUN_SH_ARG, *args],
+        [BASH, RUN_SH_ARG, *args],
         capture_output=True,
         # Explicit, not the platform default: on Windows that's the ANSI
         # code page, not UTF-8.
@@ -107,7 +112,7 @@ class RequirementTests(unittest.TestCase):
         shim.mkdir()
         tools = [tool for tool in WRAPPER_TOOLS if tool not in missing]
         return subprocess.run(
-            [shutil.which("bash"), RUN_SH_ARG, command],
+            [BASH, RUN_SH_ARG, command],
             capture_output=True,
             encoding="utf-8",
             cwd=cwd,
@@ -138,7 +143,7 @@ class RequirementTests(unittest.TestCase):
             shutil.copy(RUN_SH, lone_copy)
             marker = Path(tmp) / "marker"
             result = subprocess.run(
-                ["bash", lone_copy.as_posix(), f"touch {marker.as_posix()}"],
+                [BASH, lone_copy.as_posix(), f"touch {marker.as_posix()}"],
                 capture_output=True,
                 encoding="utf-8",
             )
@@ -154,7 +159,7 @@ class RequirementTests(unittest.TestCase):
         # so a C:\...\run.sh path left it looking in the current
         # directory, and every stream was withheld.
         result = subprocess.run(
-            ["bash", str(RUN_SH), "echo hello"],
+            [BASH, str(RUN_SH), "echo hello"],
             capture_output=True,
             encoding="utf-8",
         )
@@ -361,7 +366,7 @@ class SecretPathCheckTests(unittest.TestCase):
             # carry the raw byte 0xFF.
             result = subprocess.run(
                 [
-                    "bash", "-c",
+                    BASH, "-c",
                     "exec bash \"$1\" \"$(printf 'cat .env #\\377')\"",
                     "bash", RUN_SH_ARG,
                 ],
