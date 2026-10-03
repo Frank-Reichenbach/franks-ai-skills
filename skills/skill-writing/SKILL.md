@@ -220,6 +220,13 @@ people as fictional in the file's header comment.
   repo, also the `marketplace.json` entry, `routing.yaml` and
   `behavior.yaml`, a `behavior-<scenario>.yaml` per decision point, and
   a passing `tools/validate.sh`.
+- **Before a skill change's PR is opened:** a check of the change
+  against the skill it edits, with what it finds fixed first:
+  - a list of cases the change adds to or alters (buckets, outcomes,
+    choices) matches every place in the skill that repeats it,
+    "Output" included;
+  - every new or changed eval fixture meets the fixture rule in
+    "Evals".
 - **Review:** findings against that checklist and the rules above, each
   naming the line it concerns.
 

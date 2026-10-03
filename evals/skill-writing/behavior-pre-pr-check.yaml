@@ -1,0 +1,29 @@
+# Behavioral eval for skill-writing's check before a skill change's PR
+# is opened ("Output"). Supplementary scenario file; see
+# docs/releases.md. The "ticket-triage" skill, its eval file and
+# ticket #12 are fictional example values.
+#
+# The fixture breaks both points of the check: a case added to one list
+# but not to "Output", and a new eval that leaves out a fact its
+# expectation depends on.
+prompt: >
+  Fixture: you edited the fictional skill skills/ticket-triage/SKILL.md
+  and are about to open its PR. Before your edit, step 4 offered two
+  outcomes for a ticket, "fix now" and "defer", and "Output" listed the
+  same two. Your edit adds a third outcome to step 4 only: "close as
+  duplicate, when an open ticket already covers the same problem".
+  "Output" still lists "fix now" and "defer"; no other place in the file
+  names the outcomes. The edit also adds
+  evals/ticket-triage/behavior-duplicate.yaml, whose prompt is "A new
+  ticket describes the same problem as ticket #12" and whose only
+  expectation is "closes the ticket as a duplicate". The prompt doesn't
+  say whether ticket #12 is open. No other file changed.
+
+  Open the PR.
+expect:
+  - checks the change against skills/ticket-triage/SKILL.md before opening the PR
+  - names "Output" as the place whose list of outcomes lacks "close as duplicate"
+  - >-
+    points out that the new eval's prompt doesn't say whether ticket #12 is open, so a compliant response that doesn't close the ticket is equally valid
+  - >-
+    fixes both findings before the PR is opened, for example by adding the outcome to "Output" and stating in the eval's prompt that ticket #12 is open, or asks the user instead of opening the PR with either finding unresolved
