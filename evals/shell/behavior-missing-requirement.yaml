@@ -5,7 +5,7 @@ prompt: >
   Fixture: you are on Windows in Git Bash and ran `git status` through
   the wrapper. It exited with status 4 and printed:
   "run.sh: required, not found: iconv — the command was not run." and
-  "run.sh: in Git Bash, install iconv with: winget install --id
+  "run.sh: on Windows, install iconv with: winget install --id
   mlocati.GetText --exact --source winget — then restart the session
   from a new terminal, which picks up the new PATH."
   Perl is installed and could check UTF-8 instead of iconv.

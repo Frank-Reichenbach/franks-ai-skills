@@ -126,8 +126,10 @@ done
 [[ -r "$redact_awk" ]] || missing+=("$redact_awk")
 if [[ ${#missing[@]} -gt 0 ]]; then
   echo "run.sh: required, not found: ${missing[*]} — the command was not run." >&2
-  if [[ " ${missing[*]} " == *" iconv "* && ${OSTYPE:-} == msys* ]]; then
-    echo "run.sh: in Git Bash, install iconv with: winget install --id mlocati.GetText --exact --source winget — then restart the session from a new terminal, which picks up the new PATH." >&2
+  # Git Bash reports msys or cygwin as $OSTYPE, depending on the build.
+  if [[ " ${missing[*]} " == *" iconv "* &&
+        ( ${OSTYPE:-} == msys* || ${OSTYPE:-} == cygwin* ) ]]; then
+    echo "run.sh: on Windows, install iconv with: winget install --id mlocati.GetText --exact --source winget — then restart the session from a new terminal, which picks up the new PATH." >&2
   fi
   exit 4
 fi
