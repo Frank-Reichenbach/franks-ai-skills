@@ -84,6 +84,17 @@ from earlier commits.
 - **A review entry only for a review actually received.** If the change
   was reviewed but the request doesn't say by whom, ask — don't take the
   reviewer from earlier commits.
+- **An AI review entry goes into the PR description as soon as the
+  review is received**, whether or not it had findings. Don't wait for
+  a review of the head that fixes them: merged in between, the squash
+  commit would lose the review. The entry records that the review took
+  place, not that the reviewer approved the change or checked its
+  latest commit, so later commits, the fixes for that review included,
+  don't remove it. A person's `Reviewed-by` keeps its usual meaning,
+  that the reviewer considers the change ready (the Linux kernel's
+  "Reviewer's statement of oversight",
+  `Documentation/process/submitting-patches.rst`); add it only once
+  they say the change is ready.
 - Keep all trailers together as the message's final paragraph, with
   nothing after them. Git reads only the last paragraph as trailers, so
   a blank line between two trailers drops the first, and a line after
