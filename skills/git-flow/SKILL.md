@@ -1,6 +1,6 @@
 ---
 name: git-flow
-description: "Establishes default branching, commit message, and pull-request conventions for a project that doesn't already have its own: Conventional Commits, feature/fix/chore/docs branch prefixes, PR-before-merge, squash-merge by default, what a PR description has to cover, and attribution trailers for AI models and people. Merging always requires an explicit request or human approval, never automatic just because CI is green. Only a new issue needs its text approved before it's created; PRs, comments and issue edits the task calls for are published without asking first, and every issue, PR and comment published is reported with its link. Use when starting feature work, committing, opening or merging a pull request, creating or editing an issue, or commenting on an issue or pull request."
+description: "Establishes default branching, commit message, and pull-request conventions for a project that doesn't already have its own: Conventional Commits, feature/fix/chore/docs branch prefixes, PR-before-merge, squash-merge by default, what a PR description has to cover, and attribution trailers for AI models and people. Merging always requires an explicit request or human approval, never automatic just because CI is green. Only a new issue needs its text approved before it's created; PRs, comments and issue edits the task calls for need no further confirmation of their text, and every issue, PR and comment published is reported with its link. Use when starting feature work, committing, opening or merging a pull request, creating or editing an issue, or commenting on an issue or pull request."
 ---
 
 # Git Flow
@@ -200,14 +200,16 @@ may be cached or indexed even after deletion.
   ask for approval; create it only after that. Approving the idea
   ("file an issue for X") isn't approving a text that didn't exist yet,
   and a change to the text after approval needs a new approval.
-- **Everything else is published without asking first, once the task
-  calls for it:** opening a PR, changing its title or description,
-  posting or editing a comment on an issue or PR, and editing an
-  existing issue. None of these happen on the agent's own initiative: a
-  fix pushed to a PR's branch doesn't call for a comment about it unless
-  the task asks for one. A task that pushes to a PR's branch does call
-  for keeping its description current, as "What a PR description
-  covers" requires.
+- **Everything else needs no further confirmation, once the task calls
+  for it:** opening a PR, changing its title or description, posting or
+  editing a comment on an issue or PR, and editing an existing issue.
+  The agent doesn't ask the user to approve their text. Authorization
+  to run the command itself still follows `shell` and the host's own
+  permission system. None of these happen on the agent's own
+  initiative: a fix pushed to a PR's branch doesn't call for a comment
+  about it unless the task asks for one. A task that pushes to a PR's
+  branch does call for keeping its description current, as "What a PR
+  description covers" requires.
 - **Report every link.** Each issue, PR and comment created or updated
   is reported in the chat with its link, so the user sees what was
   published and where.
