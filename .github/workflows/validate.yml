@@ -50,7 +50,9 @@ jobs:
   # run.sh also runs in Git Bash on Windows, the bash Claude Code uses
   # there. Git for Windows ships without iconv, so this job installs the
   # GNU libiconv build that `winget install --id mlocati.GetText` does,
-  # from the same release's zip, pinned by checksum.
+  # from the same release's zip, pinned by checksum. The runner's Git for
+  # Windows (2.55.0 at the time of writing) reports $OSTYPE "cygwin";
+  # Git Bash builds reporting "msys", such as 2.53.0, aren't covered here.
   shell-windows:
     runs-on: windows-2025
     defaults:
@@ -67,10 +69,20 @@ jobs:
         with:
           python-version: "3.13"
 
+      # grep needs -U here: without it, Git Bash's grep drops a CR before
+      # matching and finds none. The control file proves the check can
+      # see a CR; any grep status but 1 ("no match") fails the step.
       - name: Check that the scripts are checked out with LF line endings
         run: |
-          if grep -l $'\r' skills/shell/scripts/*; then
-            echo "CR line endings in the files above" >&2
+          files=$(git ls-files '*.sh' '*.awk')
+          test -n "$files"
+          control="$(cygpath -u "$RUNNER_TEMP")/crlf-control"
+          printf 'a\r\n' > "$control"
+          grep -qU $'\r' "$control"
+          status=0
+          grep -lU $'\r' $files || status=$?
+          if [ "$status" -ne 1 ]; then
+            echo "CR line endings in the files above, or grep failed (status $status)" >&2
             exit 1
           fi
 
