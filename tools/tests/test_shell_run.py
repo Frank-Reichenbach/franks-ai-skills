@@ -166,6 +166,29 @@ class RequirementTests(unittest.TestCase):
                 self.assertIn(f"required, not found: {tool} —", result.stderr)
                 self.assertFalse(marker.exists(), "command should not have run")
 
+    @unittest.skipIf(
+        os.name == "nt", "Git Bash doesn't take executability from mode bits"
+    )
+    def test_non_executable_tool_counts_as_missing(self):
+        # `command -v` accepts a file on PATH that can't be run; the
+        # command then ran and its output was withheld.
+        with tempfile.TemporaryDirectory() as tmp:
+            shim = Path(tmp) / "bin"
+            shim.mkdir()
+            path = path_with_only(WRAPPER_TOOLS, shim)
+            (shim / "sed").chmod(0o644)
+            marker = Path(tmp) / "marker"
+            result = subprocess.run(
+                [BASH, RUN_SH_ARG, f"touch {marker.as_posix()}"],
+                capture_output=True,
+                encoding="utf-8",
+                cwd=tmp,
+                env={**os.environ, "PATH": path},
+            )
+            self.assertEqual(result.returncode, 4, result.stderr)
+            self.assertIn("required, not found: sed —", result.stderr)
+            self.assertFalse(marker.exists(), "command should not have run")
+
     def test_missing_redact_awk_stops_before_the_command_runs(self):
         with tempfile.TemporaryDirectory() as tmp:
             lone_copy = Path(tmp) / "run.sh"

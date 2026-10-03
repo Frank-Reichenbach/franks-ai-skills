@@ -119,10 +119,11 @@ esac
 # show up only afterwards: the UTF-8 check and redact() can't tell a
 # missing tool from bad input, so the command ran and both streams were
 # withheld as "not valid UTF-8". Git Bash of Git for Windows 2.53.0
-# ships without iconv.
+# ships without iconv. `command -v` and `type -P` also accept a file on
+# PATH that isn't executable, hence the -x test.
 missing=()
 for tool in bash iconv awk sed tr head tail mktemp wc cat rm; do
-  command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
+  tool_path=$(type -P -- "$tool") && [[ -x $tool_path ]] || missing+=("$tool")
 done
 [[ -r "$redact_awk" ]] || missing+=("$redact_awk")
 if [[ ${#missing[@]} -gt 0 ]]; then
