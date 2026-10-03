@@ -233,8 +233,8 @@ may be cached or indexed even after deletion.
 ## Output
 
 A branch, commits, and a PR that follow these rules. For a PR, a title
-and a description ready to paste. For an issue, its title and body for
-approval, then the issue. For each issue, PR and comment created or
+and a description ready to paste. For a new issue, its title and body
+for approval, then the issue. For each issue, PR and comment created or
 updated, its link in the chat. For a check of existing work, the rule
 each deviation breaks.
 
