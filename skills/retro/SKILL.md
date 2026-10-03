@@ -116,9 +116,14 @@ the same as any other technical writing.
    - **implement now** — create the issue, or post the comment on the
      open issue, then apply the change on a branch following
      `git-flow`. The PR description closes that issue (`Closes #<n>`)
-     only if the change resolves everything the issue still asks for;
-     otherwise it refers to the issue without a closing keyword
-     (`Part of #<n>`), so merging doesn't close unfinished work.
+     only if the change resolves everything the issue and its comments
+     still ask for. A partial fix never closes it: its link to the issue
+     is the comment, and the PR refers to the issue only as
+     `Part of #<n>`. Neither its title nor its description puts a
+     closing keyword before that issue's number — close, closes,
+     closed, fix, fixes, fixed, resolve, resolves or resolved, in any
+     case (GitHub, "Linking a pull request to an issue") — so not
+     "Partially fixes #<n>" either.
      A bug-issue is filed and nothing more; so is a comment on an open
      PR, whose change belongs to that PR.
    - **record only** — create the issue or post the comment, and stop
