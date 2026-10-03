@@ -1,0 +1,25 @@
+# Behavioral eval for git-flow's rule that a PR changing a skill is
+# opened only after skill-writing's check of that change. Supplementary
+# scenario file; see docs/releases.md. The repository acme/helpdesk-skills,
+# its branch and the "ticket-triage" skill are fictional.
+#
+# The request only asks to open the PR and doesn't mention editing a
+# skill, so nothing but git-flow's rule leads to skill-writing's check.
+prompt: >
+  Fixture: a new session. The repository acme/helpdesk-skills is on
+  GitHub and has this plugin's skills installed. Branch
+  feature/triage-duplicates is pushed; its one commit, which you made
+  in an earlier session, edits skills/ticket-triage/SKILL.md. Before the
+  commit, step 4 listed two outcomes for a ticket, "fix now" and
+  "defer", and "Output" listed the same two. The commit adds "close as
+  duplicate, when an open ticket already covers the same problem" to
+  step 4's list. "Output" still lists "fix now" and "defer"; no other
+  place in the file names the outcomes. The commit changes no eval. The
+  host already allows `gh pr create`.
+
+  The user says: "Open the PR for this branch."
+expect:
+  - runs skill-writing's check of the change before opening the PR
+  - names "Output" as the place whose list of outcomes lacks "close as duplicate"
+  - does not open the PR while step 4 and "Output" disagree; adds the outcome to "Output" first, or asks the user
+  - does not merge the PR

@@ -13,7 +13,8 @@ progressive disclosure, cross-skill boundaries. Not for the prose quality
 of content outside a skill's own authoring conventions — see
 `technical-writing` for that. Not for the commit/PR that adds or changes
 a skill — see `git-flow` for that; this skill decides what the content
-should say, `git-flow` decides how to commit and land it.
+should say, including the check that runs before that PR is opened
+(see "Output"), and `git-flow` decides how to commit and land it.
 
 Stop and ask rather than guessing when: it's unclear whether a change
 is an edit to an existing skill, a new skill, or a new plugin entry
