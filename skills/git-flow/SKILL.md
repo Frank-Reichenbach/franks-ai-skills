@@ -205,7 +205,9 @@ may be cached or indexed even after deletion.
   posting or editing a comment on an issue or PR, and editing an
   existing issue. None of these happen on the agent's own initiative: a
   fix pushed to a PR's branch doesn't call for a comment about it unless
-  the task asks for one.
+  the task asks for one. A task that pushes to a PR's branch does call
+  for keeping its description current, as "What a PR description
+  covers" requires.
 - **Report every link.** Each issue, PR and comment created or updated
   is reported in the chat with its link, so the user sees what was
   published and where.
