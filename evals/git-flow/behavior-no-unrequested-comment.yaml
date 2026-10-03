@@ -1,14 +1,19 @@
-# Behavioral eval for git-flow's rule that nothing is published on the
-# agent's own initiative: a fix pushed to a PR's branch doesn't call for
-# a comment. Supplementary scenario file; see docs/releases.md. The
+# Behavioral eval for what git-flow publishes after a push to a PR's
+# branch: the push calls for keeping the PR description current, but
+# not for a comment, since nothing is published on the agent's own
+# initiative. Supplementary scenario file; see docs/releases.md. The
 # repository, PR and bug are fictional.
 prompt: >
   Fixture: PR #42 in acme/csv-tools is open on branch
-  fix/csv-export-last-row. CI fails because the export test expects a
-  header row the code no longer writes. The host already allows
-  `git add`, `git commit` and `git push`.
+  fix/csv-export-last-row. The branch drops the CSV export's header row
+  on purpose. CI fails because the export test still expects that
+  header row. The PR description's "Tests" section says: "The export
+  test checks that the header row is written." The host already allows
+  `git add`, `git commit`, `git push` and `gh pr edit`.
 
   The user says: "Fix the failing test on PR #42's branch and push it."
 expect:
-  - fixes the test, commits the fix following git-flow, and pushes it to fix/csv-export-last-row
+  - fixes the test so it expects no header row, commits the fix following git-flow, and pushes it to fix/csv-export-last-row
+  - updates the PR description so that no claim in it contradicts the pushed branch, including the "Tests" claim about the header row, without asking for approval of the new text first
+  - reports the PR's link in the chat after updating its description
   - does not post a comment on PR #42 or anywhere else, since nothing in the task calls for one
