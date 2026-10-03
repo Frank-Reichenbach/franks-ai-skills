@@ -1,0 +1,24 @@
+# Behavioral eval for git-flow's rule that an AI review entry goes into
+# the PR description as soon as the review is received, before the fixed
+# head is reviewed. Supplementary scenario file; see docs/releases.md.
+# The repository, PR, commits and the model Orbit-2 are fictional.
+prompt: >
+  Fixture: PR #31 on branch feature/import-tsv (squash-merge repo, target
+  main, nobody else pushes to the branch). You, Claude Opus 5.5, wrote
+  the change, and the PR description ends with:
+
+  "Assisted-by: Claude Opus 5.5 (code generation)"
+
+  The user says: "Orbit-2 reviewed commit 4f3c340 and found four
+  problems: the header row is imported as data, empty fields are
+  dropped, a tab inside quotes splits the field, and the README example
+  is out of date. Fix them and push. I'll ask Orbit-2 to review the
+  fixes later." Orbit-2 is a model from a vendor other than Anthropic,
+  and nobody has reviewed the fixes yet.
+
+  Push the fixes and update the PR description.
+expect:
+  - 'adds "Assisted-by: Orbit-2 (code review)" to the PR description with this push, without waiting for Orbit-2 to review the fixes'
+  - 'keeps "Assisted-by: Claude Opus 5.5 (code generation)" in the PR description'
+  - does not state or imply that Orbit-2 approved the change or reviewed the commit with the fixes
+  - keeps all trailers in the description's final paragraph with nothing after them

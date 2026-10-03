@@ -69,7 +69,8 @@ from earlier commits.
   `Assisted-by` for AI tools (`Documentation/process/coding-assistants.rst`).
 
 - **People** get `Co-authored-by: Name <email>` as co-author and
-  `Reviewed-by: Name <email>` as reviewer.
+  `Reviewed-by: Name <email>` as a reviewer who considers the change
+  ready.
 - Capitalize only the first letter of a trailer key (`Assisted-by`, not
   `Assisted-By`), as git's `SubmittingPatches` asks. Git matches keys
   case-insensitively, but a `grep` or a CI check may not.
@@ -84,6 +85,18 @@ from earlier commits.
 - **A review entry only for a review actually received.** If the change
   was reviewed but the request doesn't say by whom, ask — don't take the
   reviewer from earlier commits.
+- **An AI review entry goes into the PR description as soon as the
+  review is received**, whether or not it had findings, and even when
+  the task pushes nothing. Don't wait for a review of the head that
+  fixes them, or for the next push: merged in between, the squash
+  commit would lose the review. The entry records that the review took
+  place, not that the reviewer approved the change or checked its
+  latest commit, so later commits, the fixes for that review included,
+  don't remove it. A person's `Reviewed-by` keeps its usual meaning,
+  that the reviewer considers the change ready (the Linux kernel's
+  "Reviewer's statement of oversight",
+  `Documentation/process/submitting-patches.rst`); add it only once
+  they say the change is ready.
 - Keep all trailers together as the message's final paragraph, with
   nothing after them. Git reads only the last paragraph as trailers, so
   a blank line between two trailers drops the first, and a line after
@@ -209,7 +222,11 @@ may be cached or indexed even after deletion.
   initiative: a fix pushed to a PR's branch doesn't call for a comment
   about it unless the task asks for one. A task that pushes to a PR's
   branch does call for keeping its description current, as "What a PR
-  description covers" requires.
+  description covers" requires. So does a task about a PR the agent
+  opened or pushes to, once a review of that PR's change is received,
+  as "Attribution trailers" requires. Reviewing someone else's PR, or
+  hearing of a review of a PR the task isn't about, doesn't call for
+  editing that PR's description.
 - **Report every link.** Each issue, PR and comment created or updated
   is reported in the chat with its link, so the user sees what was
   published and where.
@@ -225,6 +242,8 @@ may be cached or indexed even after deletion.
 - Merging — see "Pull requests": it always needs an explicit request.
 - A change was reviewed, but it's not stated by whom — ask for the
   reviewer before writing a review trailer.
+- A person reviewed the change, but it's not stated whether they
+  consider it ready — ask before writing their `Reviewed-by`.
 - It's uncertain which of two models is the newer release — ask; never
   guess a model name into a trailer.
 - A new issue is about to be created — see "Publishing issues, PRs and
