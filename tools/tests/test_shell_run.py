@@ -386,22 +386,25 @@ class SecretPathCheckTests(unittest.TestCase):
                 # The command text itself never appears in the diagnostic.
                 self.assertNotIn(cmd, result.stderr)
 
-    @unittest.skipIf(
-        os.name == "nt",
-        "Git Bash's regex matches across an invalid byte in every locale,"
-        " so the regression can't occur there",
-    )
     def test_invalid_utf8_does_not_bypass_the_check(self):
         # Regression: in a UTF-8 locale an invalid byte made the regex
-        # match fail, so `cat .env #\xff` ran and printed the file. In a
-        # non-UTF-8 locale every byte is valid and the test proves nothing.
+        # match fail, so the command ran and printed the file. With glibc
+        # and Git Bash only a byte next to the path does that (the
+        # boundary class can't match it); IFS splits it off again, so
+        # the command reads .env itself. bash builds the argument: a
+        # Windows command line can't carry the byte. In a non-UTF-8
+        # locale every byte is valid and the test proves nothing.
         locale_name = utf8_locale()
         if locale_name is None:
             self.skipTest("no UTF-8 locale installed")
+        command = r"IFS=\377; a=cat\377.env; $a"
         with tempfile.TemporaryDirectory() as tmp:
             (Path(tmp) / ".env").write_text("PASSWORD=FAKE_PW_5678\n")
             result = subprocess.run(
-                [BASH, RUN_SH_ARG, b"cat .env #\xff"],
+                [
+                    BASH, "-c", 'exec "$BASH" "$1" "$(printf "$2")"',
+                    "bash", RUN_SH_ARG, command,
+                ],
                 capture_output=True,
                 cwd=tmp,
                 env={**os.environ, "LC_ALL": locale_name},
