@@ -221,9 +221,12 @@ may be cached or indexed even after deletion.
   permission system. None of these happen on the agent's own
   initiative: a fix pushed to a PR's branch doesn't call for a comment
   about it unless the task asks for one. A task that pushes to a PR's
-  branch, or in which a review of the PR is received, does call for
-  keeping its description current, as "What a PR description covers"
-  and "Attribution trailers" require.
+  branch does call for keeping its description current, as "What a PR
+  description covers" requires. So does a task about a PR the agent
+  opened or pushes to, once a review of that PR's change is received,
+  as "Attribution trailers" requires. Reviewing someone else's PR, or
+  hearing of a review of a PR the task isn't about, doesn't call for
+  editing that PR's description.
 - **Report every link.** Each issue, PR and comment created or updated
   is reported in the chat with its link, so the user sees what was
   published and where.
