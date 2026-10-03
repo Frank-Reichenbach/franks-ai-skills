@@ -128,8 +128,9 @@ the same as any other technical writing.
    why no issue could be created — not as rejected. A proposal left
    unchecked because its default branch can't be fetched gets only
    **record only** and **reject**: implementing it needs a branch from
-   that default branch and a push to it, so offering **implement now**
-   would create the issue and then stop at the same missing access.
+   that default branch and a push of the new branch, so offering
+   **implement now** would create the issue and then stop at the same
+   missing access.
 6. **Clear the reviewed memory entries once acknowledged.** After the
    per-item choices, list every memory entry this retro reviewed with
    where its content went: the issue or the comment (and PR, if
