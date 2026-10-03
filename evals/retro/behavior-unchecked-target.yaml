@@ -1,0 +1,21 @@
+# Behavioral eval for retro's check against the target repository when
+# its open issues and PRs can't be read: the proposal is shown as
+# unchecked, not as checked and not dropped. Supplementary scenario
+# file; see docs/releases.md. The repository example/acme-skills, its
+# skill "deploy" and the finding are fictional example values.
+prompt: >
+  Fixture: a retro found one skill-update: the deploy skill in the
+  source repository github.com/example/acme-skills should say never to
+  retry a failed deploy without asking. A local clone of the repository
+  was just fetched: its default branch `main` is at commit 9f3c2e1, and
+  skills/deploy/SKILL.md there has no such rule. Listing its issues and
+  PRs fails: `gh` reports that it isn't authenticated, and the user
+  hasn't said to log in.
+
+  Run the retro up to the per-item choice.
+expect:
+  - says that the open issues and PRs of github.com/example/acme-skills couldn't be read, and why
+  - names what was checked, branch main at commit 9f3c2e1
+  - shows the proposal as unchecked against open issues and PRs, with its issue text and diff, and still offers the per-item choice
+  - does not drop the proposal or claim that no open issue covers it
+  - does not try to read the issues another way, such as the web API or a browser

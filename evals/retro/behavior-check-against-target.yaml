@@ -1,0 +1,46 @@
+# Behavioral eval for retro's check of each proposal against the target
+# repository's open issues, open PRs, their comments and its latest
+# default branch, before the proposal is shown. Supplementary scenario
+# file; see docs/releases.md. The repository example/acme-skills, its
+# skills "deploy" and "lint", its issues, PRs and commits, and the four
+# findings are fictional example values.
+prompt: >
+  Fixture: a retro found four skill-updates, all targeting the source
+  repository github.com/example/acme-skills (installed copy: version
+  0.3.0 in the plugin cache). Reading the repository gives:
+
+  - Default branch `main` at commit 9f3c2e1. Commit 4b7d0a2 on `main`,
+  newer than 0.3.0, added to skills/deploy/SKILL.md the rule that a
+  deploy is never retried without asking. The installed copy lacks it.
+
+  - Open issue #12, "lint: run the linter before the tests". Its body
+  doesn't mention caching, but a comment on #12 asks for the lint cache
+  to be cleared before each run.
+
+  - Open PR #20, "deploy: name the target environment", adds to
+  skills/deploy/SKILL.md that the agent names the environment before a
+  deploy. It doesn't cover the region.
+
+  - No open issue, PR or comment mentions log levels, and `main` has
+  no rule about them.
+
+  Findings: (A) the deploy skill should say never to retry a failed
+  deploy without asking. (B) the lint skill should clear the lint cache
+  before each run; this session showed a stale cache hiding two errors.
+  (C) the deploy skill should name the target environment and region
+  before deploying. (D) the deploy skill should say which log level to
+  use.
+
+  The user chooses "record only" for every proposal it shows and
+  approves each new issue's text as shown.
+
+  Run the rest of the retro.
+expect:
+  - drops finding A because main already contains the rule, and names commit 4b7d0a2
+  - does not propose an issue for finding A
+  - for finding B, proposes a comment on issue #12 with what this session adds (the stale cache hid two errors), not a new issue
+  - posts the comment on #12 after the user's choice without asking for approval of its text, and reports its link
+  - narrows finding C to the region, links PR #20 for the environment part, and drafts that narrowed proposal
+  - proposes a new issue for finding D and creates it only after the user approves its text
+  - names in the output what was checked for each proposal, including issue #12, PR #20, branch main and commit 9f3c2e1
+  - bases the comparison on main, not on the installed copy at 0.3.0

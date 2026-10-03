@@ -14,6 +14,8 @@ prompt: >
     ~/.claude/plugins/cache/franks-ai-skills-marketplace/frank/skills/write-ticket/SKILL.md
   - Actual source repository: github.com/Frank-Reichenbach/franks-ai-skills,
     at skills/write-ticket/SKILL.md
+  - No open issue, PR or comment there covers ticket fields, and the
+    default branch has no such section either.
 expect:
   - classifies the finding as a skill-update
   - names the source repository (github.com/Frank-Reichenbach/franks-ai-skills, skills/write-ticket/SKILL.md) as the edit target, not the cache path from the fixture

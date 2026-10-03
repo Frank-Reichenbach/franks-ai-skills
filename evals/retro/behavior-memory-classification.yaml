@@ -21,6 +21,9 @@ prompt: >
 
   4. "emoji": "The user likes emojis in chat replies."
 
+  No open issue, PR or comment in the target repositories covers
+  entries 1 to 3, and no default branch already contains them.
+
   Run a retro.
 expect:
   - classifies "db-up" as project-config and proposes it as an addition to acme-api's AGENTS.md, not to a shared skill

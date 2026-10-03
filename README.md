@@ -51,7 +51,8 @@ for anything that's changed since.
   locations.
 - `retro` — reviews a session and the agent's memory, proposes skill
   updates, new skills, project configuration changes, or bug reports,
-  records each as an issue in the repository it targets, and clears the
+  records each as an issue in the repository it targets, or as a comment
+  on an open issue or PR there that already covers it, and clears the
   memory entries it reviewed once the user acknowledges them.
 
 See `skills/skill-writing/SKILL.md` for how to add another.
