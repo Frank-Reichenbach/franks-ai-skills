@@ -119,11 +119,14 @@ the same as any other technical writing.
      only if the change resolves everything the issue and its comments
      still ask for. A partial fix never closes it: its link to the issue
      is the comment, and the PR refers to the issue only as
-     `Part of #<n>`. Neither its title nor its description puts a
-     closing keyword before that issue's number — close, closes,
-     closed, fix, fixes, fixed, resolve, resolves or resolved, in any
-     case (GitHub, "Linking a pull request to an issue") — so not
-     "Partially fixes #<n>" either.
+     `Part of #<n>`. Neither its title, its description nor any of its
+     commit messages puts a closing keyword before that issue's
+     number — close, closes, closed, fix, fixes, fixed, resolve,
+     resolves or resolved, in any case (GitHub, "Linking a pull request
+     to an issue") — so not "Partially fixes #<n>" either. A commit
+     message counts because a merge that keeps the branch's commits,
+     or a squash that takes their message, puts it on the default
+     branch.
      A bug-issue is filed and nothing more; so is a comment on an open
      PR, whose change belongs to that PR.
    - **record only** — create the issue or post the comment, and stop

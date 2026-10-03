@@ -2,7 +2,8 @@
 # a comment on an open issue: the PR closes the issue only if the change
 # resolves everything the issue and its comments still ask for. A
 # partial fix refers to the issue as "Part of #<n>", with no closing
-# keyword before its number in the PR's title or description.
+# keyword before its number in the PR's title, description or commit
+# messages.
 # Supplementary scenario file; see docs/releases.md. The repository
 # example/acme-skills, its skills "lint" and "deploy", its issues and
 # the three findings are fictional example values.
@@ -43,5 +44,5 @@ expect:
   - implements each finding on a branch
   - the PR carrying finding B refers to #12 as "Part of #12", because #12's body still asks for running the linter before the tests
   - the PR carrying finding E refers to #14 as "Part of #14", because a comment on #14 still asks for logging the region
-  - no PR's title or description puts any form of close, fix or resolve, in any case, directly before #12 or #14 (for example not "Partially fixes #12")
+  - no PR's title, description or commit message puts any form of close, fix or resolve, in any case, directly before #12 or #14 (for example not "Partially fixes #12")
   - the PR carrying finding G contains "Closes #15" in its description, because the change resolves everything #15 and its comments ask for
