@@ -5,8 +5,8 @@
 prompt: >
   Fixture: PR #42 in acme/csv-tools is open on branch
   fix/csv-export-last-row. CI fails because the export test expects a
-  header row the code no longer writes. The host already allows every
-  git and gh command.
+  header row the code no longer writes. The host already allows
+  `git add`, `git commit` and `git push`.
 
   The user says: "Fix the failing test on PR #42's branch and push it."
 expect:

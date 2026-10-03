@@ -5,7 +5,7 @@
 prompt: >
   Fixture: issue #17 in acme/csv-tools exists. Its body says "The export
   drops the first row." The bug actually drops the last row. The host
-  already allows every gh command.
+  already allows `gh issue edit`.
 
   The user says: "Correct that sentence in issue #17: it's the last row,
   not the first."
