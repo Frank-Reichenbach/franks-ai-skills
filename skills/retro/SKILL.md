@@ -96,8 +96,9 @@ the same as any other technical writing.
      would fix it, and wait (see `shell`, "When access is missing"). If
      it stays unreadable but an issue can still be created there — the
      default branch can't be fetched, but `gh` works — the proposal is
-     unchecked: show it as such, with its per-item choice. If `gh`
-     can't reach the target either, the item falls back to
+     unchecked: show it as such, with its diff against the installed
+     copy, and say so; it gets a reduced per-item choice (step 5). If
+     `gh` can't reach the target either, the item falls back to
      proposal-only, as above.
 4. **Show concrete content before asking.** For each proposal, show the
    actual content before asking what to do with it: for a skill-update,
@@ -124,7 +125,11 @@ the same as any other technical writing.
 
    A proposal that fell back to proposal-only in step 3 has no choice
    that creates anything: it stays in the output as proposal-only, with
-   why no issue could be created — not as rejected.
+   why no issue could be created — not as rejected. A proposal left
+   unchecked because its default branch can't be fetched gets only
+   **record only** and **reject**: implementing it needs a branch from
+   that default branch and a push to it, so offering **implement now**
+   would create the issue and then stop at the same missing access.
 6. **Clear the reviewed memory entries once acknowledged.** After the
    per-item choices, list every memory entry this retro reviewed with
    where its content went: the issue or the comment (and PR, if
