@@ -1,6 +1,6 @@
 ---
 name: retro
-description: "Reviews the current session (or a described problem within it) and the agent's persistent memory, and proposes skill updates, new skills, project configuration changes, or bug reports, each recorded as a GitHub issue once its text is approved — shown concretely before a per-item choice to implement now, record only, or reject. Memory entries it reviews are cleared as part of the retro once the user acknowledges them. Edits target the relevant skill's actual source repo, never an installed plugin cache. Use when the user asks for a retro, a lessons-learned pass, or a review of what went wrong in a session, or when a session with notable friction is wrapping up."
+description: "Reviews the current session (or a described problem within it) and the agent's persistent memory, and proposes skill updates, new skills, project configuration changes, or bug reports, each checked against the target repository's open issues, PRs and default branch, then recorded as a GitHub issue once its text is approved, or as a comment on an open issue or PR that already covers it — shown concretely before a per-item choice to implement now, record only, or reject. Memory entries it reviews are cleared as part of the retro once the user acknowledges them. Edits target the relevant skill's actual source repo, never an installed plugin cache. Use when the user asks for a retro, a lessons-learned pass, or a review of what went wrong in a session, or when a session with notable friction is wrapping up."
 ---
 
 # Retro
@@ -12,7 +12,8 @@ and the agent's persistent memory for things worth carrying forward: an
 existing skill that should change, a gap that needs a new skill, a rule
 that belongs in one project's own configuration, or a bug worth filing
 as a GitHub issue. Every proposal that would change files in a git
-repository is recorded as an issue there, whether or not it is
+repository is recorded as an issue there, or as a comment on an open
+issue or PR there that already covers it, whether or not it is
 implemented now. Memory is not a place where rules stay: every entry
 the retro reviews ends up in one of those places, or is dropped, and is
 cleared once the user acknowledges it.
@@ -76,49 +77,89 @@ the same as any other technical writing.
    to — not necessarily this one, if the friction came from using a
    *different* installed plugin's skill. A drop has no target. A
    proposal's issue goes in the same repository its change targets.
-   - **If the target repository can't be determined, or `gh`/git access
-     to it isn't available, fall back to proposal-only for that item**:
-     describe the change or issue content and say plainly why it can't
-     be acted on, rather than guessing a repository or silently dropping
-     the finding.
+   - **If the target repository can't be determined, or `gh` access to
+     it isn't available, so no issue can be created there, fall back to
+     proposal-only for that item**: describe the change or issue content
+     and say plainly why it can't be acted on, rather than guessing a
+     repository or silently dropping the finding.
+   - **Check each proposal against its target before showing it.** Read
+     the target repository's open issues and open PRs, the comments on
+     those that touch the proposal's topic, and the files the proposal
+     touches on its latest default branch, not the installed copy,
+     which can lag behind. If the default branch already does what the
+     proposal asks, drop it and name the commit. If an open issue or PR
+     covers it, propose a comment there with what this session adds,
+     instead of a new issue. If one covers part of it, narrow the
+     proposal to the rest and link that issue or PR. Name in the output
+     what was checked: issue and PR numbers, branch and commit. If the
+     issues, PRs or the branch can't be read, say what failed and what
+     would fix it, and wait (see `shell`, "When access is missing"). If
+     it stays unreadable but an issue can still be created there — the
+     default branch can't be fetched, but `gh` works — the proposal is
+     unchecked: show it as such, with its diff against the installed
+     copy, and say so; it gets a reduced per-item choice (step 5). If
+     `gh` can't reach the target either, the item falls back to
+     proposal-only, as above.
 4. **Show concrete content before asking.** For each proposal, show the
    actual content before asking what to do with it: for a skill-update,
    new-skill, or project-config, the issue's title and body — what
    happened (symptom), why (cause), required behavior, how to verify it
    — and the real diff/edit; for a bug-issue, its title and body; for a
+   comment on an open issue or PR, its text and where it goes; for a
    drop, the reason. Never ask for a yes/no on content the user hasn't
    actually seen.
 5. **Per-item choice.** Every issue is created only after the user has
    approved its text (see `git-flow`, "Publishing issues, PRs and
-   comments"). For each proposal:
-   - **implement now** — create the issue, then apply the change on a
-     branch following `git-flow`; the PR description closes the issue
-     (`Closes #<n>`). A bug-issue is filed and nothing more.
-   - **record only** — create the issue and stop there; the open issue
-     is the record.
-   - **reject** — create nothing, and list it as rejected in the output.
+   comments"). A comment on an open issue or PR needs no approval of
+   its text, but is posted only after the user's choice for it. For
+   each proposal:
+   - **implement now** — create the issue, or post the comment on the
+     open issue, then apply the change on a branch following
+     `git-flow`. The PR description closes that issue (`Closes #<n>`)
+     only if the change resolves everything the issue and its comments
+     still ask for. A partial fix never closes it: its link to the issue
+     is the comment, and the PR refers to the issue only as
+     `Part of #<n>`. Neither its title, its description nor any of its
+     commit messages puts a closing keyword before that issue's
+     number — close, closes, closed, fix, fixes, fixed, resolve,
+     resolves or resolved, in any case (GitHub, "Linking a pull request
+     to an issue") — so not "Partially fixes #<n>" either. A commit
+     message counts because a merge that keeps the branch's commits,
+     or a squash that takes their message, puts it on the default
+     branch.
+     A bug-issue is filed and nothing more; so is a comment on an open
+     PR, whose change belongs to that PR.
+   - **record only** — create the issue or post the comment, and stop
+     there; the open issue is the record.
+   - **reject** — create and post nothing, and list it as rejected in
+     the output.
 
    A proposal that fell back to proposal-only in step 3 has no choice
    that creates anything: it stays in the output as proposal-only, with
-   why no issue could be created — not as rejected.
+   why no issue could be created — not as rejected. A proposal left
+   unchecked because its default branch can't be fetched gets only
+   **record only** and **reject**: implementing it needs a branch from
+   that default branch and a push of the new branch, so offering
+   **implement now** would create the issue and then stop at the same
+   missing access.
 6. **Clear the reviewed memory entries once acknowledged.** After the
    per-item choices, list every memory entry this retro reviewed with
-   where its content went: the issue (and PR, if implemented), a
-   proposal-only item with why no issue could be created, a proposal
-   the user rejected, or dropped with its reason. Then ask the user to
-   acknowledge the list, and delete only after they have — every entry
-   they acknowledge, whatever its bucket and whether or not it was
-   implemented. An entry they want to keep stays. Never delete a memory
-   entry without that acknowledgment. Memory doesn't keep a second copy
-   of a rule that now lives elsewhere, and a dropped entry has nothing
-   left to keep.
+   where its content went: the issue or the comment (and PR, if
+   implemented), a proposal-only item with why no issue could be
+   created, a proposal the user rejected, or dropped with its reason.
+   Then ask the user to acknowledge the list, and delete only after they
+   have — every entry they acknowledge, whatever its bucket and whether
+   or not it was implemented. An entry they want to keep stays. Never
+   delete a memory entry without that acknowledgment. Memory doesn't
+   keep a second copy of a rule that now lives elsewhere, and a dropped
+   entry has nothing left to keep.
 
 ## Output
 
 A grouped list of proposals (skill-update / new-skill / project-config /
 bug-issue / drop), each with its concrete content and its target
-repository named explicitly, followed by each proposal's issue and PR
+repository named explicitly, and what it was checked against there (or
+that it is unchecked). Then each proposal's issue, comment and PR
 links, its rejection, or why it stayed proposal-only, and the memory
-entries listed
-for acknowledgment, each with where its content went and whether it
-was deleted.
+entries listed for acknowledgment, each with where its content went
+and whether it was deleted.

@@ -28,7 +28,8 @@ rest of the session — not only the one `r00t` was invoked alongside.
   locations.
 - `retro` — reviews a session and the agent's memory, proposes skill
   updates, new skills, project configuration changes, or bug reports,
-  records each as an issue in the repository it targets, and clears the
+  records each as an issue in the repository it targets, or as a comment
+  on an open issue or PR there that already covers it, and clears the
   memory entries it reviewed once the user acknowledges them.
 
 Update this list whenever a new skill is added to this plugin (see

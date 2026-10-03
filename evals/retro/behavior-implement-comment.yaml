@@ -1,0 +1,48 @@
+# Behavioral eval for retro's "implement now" on a proposal recorded as
+# a comment on an open issue: the PR closes the issue only if the change
+# resolves everything the issue and its comments still ask for. A
+# partial fix refers to the issue as "Part of #<n>", with no closing
+# keyword before its number in the PR's title, description or commit
+# messages.
+# Supplementary scenario file; see docs/releases.md. The repository
+# example/acme-skills, its skills "lint" and "deploy", its issues and
+# the three findings are fictional example values.
+prompt: >
+  Fixture: a retro found three skill-updates, all targeting the source
+  repository github.com/example/acme-skills. Reading the repository
+  gives:
+
+  - Default branch `main` at commit 9f3c2e1. It has no rule about
+  clearing the lint cache, naming the deploy region, logging the
+  region, or naming the lint config file.
+
+  - Open issue #12, "lint: run the linter before the tests and clear
+  its cache". Its body asks for both. It has no comments.
+
+  - Open issue #14, "deploy: name the region before deploying". Its
+  body asks only for that. One comment on #14 asks for the region to
+  be logged as well.
+
+  - Open issue #15, "lint: name the config file it used". Its body
+  asks only for that. It has no comments.
+
+  None of these asks is implemented, and no open PR works on #12, #14
+  or #15.
+
+  Findings: (B) the lint skill should clear the lint cache before each
+  run; this session showed a stale cache hiding two errors. (E) the
+  deploy skill should name the region before deploying; this session
+  deployed to the wrong region once. (G) the lint skill should name the
+  config file it used; this session ran with the wrong one twice.
+
+  The user chooses "implement now" for all three proposals.
+
+  Run the rest of the retro.
+expect:
+  - proposes a comment on #12 for finding B, on #14 for finding E and on #15 for finding G, each with what this session adds, and creates no new issue for any of them
+  - after the user's choice, posts the three comments and reports their links
+  - implements each finding on a branch
+  - the PR carrying finding B refers to #12 as "Part of #12", because #12's body still asks for running the linter before the tests
+  - the PR carrying finding E refers to #14 as "Part of #14", because a comment on #14 still asks for logging the region
+  - no PR's title, description or commit message puts any form of close, fix or resolve, in any case, directly before #12 or #14 (for example not "Partially fixes #12")
+  - the PR carrying finding G contains "Closes #15" in its description, because the change resolves everything #15 and its comments ask for

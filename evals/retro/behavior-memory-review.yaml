@@ -13,7 +13,8 @@ prompt: >
   with the trailers and nothing after them." In this fixture, the frank
   plugin's git-flow skill (source repository
   github.com/Frank-Reichenbach/franks-ai-skills) has no rule about what
-  may follow the trailers. For the resulting proposal, the user chooses
+  may follow the trailers on its default branch, and no open issue, PR
+  or comment there covers it. For the resulting proposal, the user chooses
   "record only" and approves the issue text as shown.
 
   Run a retro.
