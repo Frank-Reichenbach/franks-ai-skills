@@ -86,8 +86,9 @@ from earlier commits.
   was reviewed but the request doesn't say by whom, ask — don't take the
   reviewer from earlier commits.
 - **An AI review entry goes into the PR description as soon as the
-  review is received**, whether or not it had findings. Don't wait for
-  a review of the head that fixes them: merged in between, the squash
+  review is received**, whether or not it had findings, and even when
+  the task pushes nothing. Don't wait for a review of the head that
+  fixes them, or for the next push: merged in between, the squash
   commit would lose the review. The entry records that the review took
   place, not that the reviewer approved the change or checked its
   latest commit, so later commits, the fixes for that review included,
@@ -220,8 +221,9 @@ may be cached or indexed even after deletion.
   permission system. None of these happen on the agent's own
   initiative: a fix pushed to a PR's branch doesn't call for a comment
   about it unless the task asks for one. A task that pushes to a PR's
-  branch does call for keeping its description current, as "What a PR
-  description covers" requires.
+  branch, or in which a review of the PR is received, does call for
+  keeping its description current, as "What a PR description covers"
+  and "Attribution trailers" require.
 - **Report every link.** Each issue, PR and comment created or updated
   is reported in the chat with its link, so the user sees what was
   published and where.
