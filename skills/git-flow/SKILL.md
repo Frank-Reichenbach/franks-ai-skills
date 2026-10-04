@@ -114,6 +114,10 @@ from earlier commits.
 ## Pull requests
 
 - A PR is required before merging to `main` — no direct pushes.
+- A PR whose change adds or edits a skill (its `SKILL.md`,
+  references, scripts or evals) is opened only after `skill-writing`'s
+  check of that change (see its "Output"), even when the task only asks
+  to open the PR.
 - CI must be green before merge.
 - Squash-merge by default, so `main`'s history stays one commit per
   reviewed change, with the squash commit set to take the PR title as

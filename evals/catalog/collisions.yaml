@@ -40,3 +40,7 @@ cases:
     expected: skill-writing
     also_expected: [git-flow]
     note: "skill-writing decides the skill's own content and structure; git-flow governs the commit/PR that lands it, the same as any other change. Both commonly apply together — intentional cooperation, not a collision to resolve to one skill."
+  - prompt: "Open the PR for the skill change on this branch"
+    expected: git-flow
+    also_expected: [skill-writing]
+    note: "git-flow opens the PR; skill-writing's check of a skill change runs before it is opened, which git-flow's \"Pull requests\" section hands off to. Intentional cooperation, not a collision to resolve to one skill."
